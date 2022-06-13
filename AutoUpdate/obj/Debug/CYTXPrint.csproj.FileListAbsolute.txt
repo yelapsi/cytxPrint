@@ -1,0 +1,12 @@
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\AutoUpdate\bin\CYTXPrint.exe.config
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\AutoUpdate\bin\CYTXPrint.exe
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\AutoUpdate\bin\CYTXPrint.pdb
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\AutoUpdate\bin\DiffieHellman.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\AutoUpdate\bin\Org.Mentalis.Security.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\AutoUpdate\bin\Tamir.SharpSSH.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\AutoUpdate\obj\Debug\CYTXPrint.ModuleProgressBar.resources
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\AutoUpdate\obj\Debug\CYTXPrint.Properties.Resources.resources
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\AutoUpdate\obj\Debug\AutoUpdate.UpdateForm.resources
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\AutoUpdate\obj\Debug\CYTXPrint.csproj.GenerateResource.Cache
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\AutoUpdate\obj\Debug\CYTXPrint.exe
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\AutoUpdate\obj\Debug\CYTXPrint.pdb

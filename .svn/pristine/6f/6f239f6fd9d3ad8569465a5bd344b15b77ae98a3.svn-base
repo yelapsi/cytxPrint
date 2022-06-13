@@ -1,0 +1,539 @@
+﻿using Maticsoft.Common.model;
+using Maticsoft.Common.Util;
+using Maticsoft.Common.Util.playType;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Text;
+
+namespace Maticsoft.BLL.ScanPortImage
+{
+    public class ScanPortImageUtil
+    {
+        public static Bitmap creatScanPortImage(lottery_ticket lt,String times)
+        {
+            SPImageStructure spis = SPImageGlobal.SPISTRUCTURE_DICTIONARY[getSPIKey(lt)];
+            //第一步：计算整个图片的高度(头上高度——文字内容加部分空白预留、扫描部分、尾部高度)
+            Bitmap imgTemp = new Bitmap(640, spis.getStructureHigh()+200);
+            Graphics g = Graphics.FromImage(imgTemp); //创建画板
+            g.Clear(Color.White);
+
+            //第二步：写入订单信息
+            g.DrawString(lt.multiple+"倍"+lt.bet_price+"元", new Font("宋体", 40, FontStyle.Bold, GraphicsUnit.Pixel), SystemBrushes.ControlText, new Point(300, 2));
+            g.DrawString("订单:" + lt.order_id.ToString().Replace("-","(上传)") + "(" + lt.ticket_id + "-" + times + ")\n<" + getShowName(lt.username)+">", new Font("宋体", 25, FontStyle.Bold, GraphicsUnit.Pixel), SystemBrushes.ControlText, new Point(10, 2));
+            //第三步：绘制一张未填入打印内容的图片
+            if (lt.license_id == 11)//双色球
+            {
+                creatBlankScanPortImage02(imgTemp, g, spis);
+                //第四步：填入打印内容
+                drawBetContent02(imgTemp, g, spis.getDrawPoints(lt));
+            }
+            else if (lt.license_id == 21)
+            {
+                creatBlankScanPortImage_BD(imgTemp, g, spis, lt.play_type);
+                drawBetContent_BD(imgTemp, g, spis.getDrawPoints(lt), lt.play_type);
+                //在最后画点东西，不然投注单会被截断
+                g.DrawString("[北京单场]", new Font("宋体", 25, FontStyle.Bold, GraphicsUnit.Pixel), SystemBrushes.ControlText, new Point(10, imgTemp.Height - 50));
+            }
+            else
+            {
+                creatBlankScanPortImage(imgTemp, g, spis);
+                //第四步：填入打印内容
+                drawBetContent(imgTemp, g, spis.getDrawPoints(lt));
+            }           
+            return FaqCopyTo1bpp(imgTemp);
+        }
+
+        public static Bitmap creatScanPortImage02(lottery_ticket lt)
+        {
+            
+
+            //this.lbDetails.Text = betCode2ShowArray[0];
+            //this.lbDetails2.Text = betCode2ShowArray[1];
+            //this.lbBet.Text = lt.bet_num + "注";
+            //this.lbMultiple.Text = lt.multiple + "倍";
+            //SPImageStructure spis = SPImageGlobal.SPISTRUCTURE_DICTIONARY[getSPIKey(lt)];
+            //第一步：计算整个图片的高度(头上高度——文字内容加部分空白预留、扫描部分、尾部高度)
+            Bitmap imgTemp = new Bitmap(640, 800);
+            Graphics g = Graphics.FromImage(imgTemp); //创建画板
+            g.Clear(Color.White);
+
+            //第二步：写入订单信息
+            g.DrawString(lt.multiple + "倍" + lt.bet_price + "元", new Font("宋体", 40, FontStyle.Bold, GraphicsUnit.Pixel), SystemBrushes.ControlText, new Point(300, 2));
+            g.DrawString("订单:" + lt.order_id.ToString().Replace("-", "(上传)") + "(" + lt.ticket_id  + ")\n<" + getShowName(lt.username) + ">", new Font("宋体", 25, FontStyle.Bold, GraphicsUnit.Pixel), SystemBrushes.ControlText, new Point(10, 2));
+
+            String[] betCode2ShowArray = BetCodeTranslationUtil.betCode2ShowArrayNoCrypt(lt.bet_code, lt.license_id.ToString(), lt.play_type);
+            g.DrawString(betCode2ShowArray[0] + "\n" + betCode2ShowArray[1] + "\n" + lt.bet_num + "注  " + lt.multiple + "倍  " + lt.bet_price + "元", new Font("宋体", 30, FontStyle.Bold, GraphicsUnit.Pixel), SystemBrushes.ControlText, new Point(30, 100));
+            
+            return FaqCopyTo1bpp(imgTemp);
+        }
+
+        /// <summary>
+        /// 取可显示的用户名
+        /// </summary>
+        /// <param name="p"></param>
+        /// <returns></returns>
+        private static string getShowName(string p)
+        {
+            return p.Substring(0,1)+"****"+(p.Length>4?p.Substring(p.Length-5,5):p.Substring(1));
+        }
+
+        /// <summary>
+        /// 通过彩票对象取得对应的票面结构字典的key值
+        /// </summary>
+        /// <param name="lt"></param>
+        /// <returns></returns>
+        private static string getSPIKey(lottery_ticket lt)
+        {
+            if (lt.play_type.Contains("-"))//竞彩
+            {                
+                String[] p = lt.play_type.Split('-');
+                if (lt.license_id == 9 && (p[0].Equals("10") || p[0].Equals("11")))//冠军和冠亚军
+                {
+                    return "9_10_11";
+                }
+
+                int m = 3;
+                int.TryParse(p[1].Replace("null", "1c1").Split('c')[0], out m);
+                if (m==1)//有可能是单关选了多场
+                {
+                    m = lt.bet_code.Split('|').Length;
+                }
+
+                if (lt.license_id == 9)
+                {                    
+                    return lt.license_id + "_" + (p[0].Equals("2") ? "6" : p[0]) + "_" + (m <= 3 ? 3 : (m <= 6 ? 6 : 8));
+                }
+                else if (lt.license_id == 21)
+                {
+                    return lt.license_id + "_" + p[0] + "_" + "1";
+                }
+                else
+                {
+                    return lt.license_id + "_" + p[0] + "_" + (m <= 3 ? 3 : (m <= 6 ? 6 : 8));
+                }
+                
+            }
+            else
+            {
+                if (lt.license_id == 5 || lt.license_id == 6)
+                {
+                    if (lt.license_id == 5 && lt.play_type.Equals("1"))
+                    {
+                        int bet_num = 0;
+                        int.TryParse(lt.bet_num,out bet_num);
+                        if (bet_num > 3)
+                        {
+                            return "5_14c_5";
+                        }
+                    }
+                    return "5_6_1";
+                }
+                else if (lt.license_id == 3 || lt.license_id == 7 || lt.license_id == 8)
+                {
+                    return lt.license_id + "_1_2";
+                }
+                else if (lt.license_id == 4)
+                {
+                    return lt.license_id + (lt.play_type.Equals("3")?"_0_3":"_1_2");
+                }
+                else if (lt.license_id == 2 || lt.license_id == 1)
+                {
+                    return "2_1_2";
+                }
+                else if (lt.license_id >= 100 && lt.license_id <= 200)
+                {
+                    int ltp = 0;
+                    int.TryParse(lt.play_type, out ltp);
+                    if (ltp == 5 || ltp == 55 || ltp == 6 || ltp == 7 || ltp == 8 || ltp == 12 || ltp == 1212 || ltp == 13 || ltp == 14 || ltp == 15)
+                    {
+                        return "100_QX";
+                    }
+                    else
+                    {
+                        return "100_RX";
+                    }
+                }
+                return lt.license_id + "_" + lt.play_type;
+            }
+        }
+
+        /// <summary>
+        /// 绘制投注内容的点
+        /// </summary>
+        /// <param name="imgTemp"></param>
+        /// <param name="g"></param>
+        /// <param name="smallp"></param>
+        /// <param name="list"></param>
+        private static void drawBetContent(Bitmap imgTemp, Graphics g, List<Point> list)
+        {
+            Pen smallp = new Pen(Color.Black, SPImageGlobal.SMALL_BB_HIGH);//小黑块画笔
+            foreach (Point item in list)
+            {
+                int newx = item.X + (int)Math.Floor((item.X - SPImageGlobal.LEFT_SMALL_BB_X) / SPImageGlobal.BB_WIDTH / 3d);
+                g.DrawLine(smallp, newx,
+                item.Y + 2 + (int)Math.Floor((item.Y - SPImageGlobal.START_POINT_Y) / (3d * SPImageGlobal.BB_HIGH)),
+                    newx + SPImageGlobal.BB_WIDTH - 4,
+                    item.Y+2 + (int)Math.Floor((item.Y - SPImageGlobal.START_POINT_Y) / (3d * SPImageGlobal.BB_HIGH)));
+            }
+        }
+
+        /// <summary>
+        /// 绘制投注内容的点(双色球专用)
+        /// </summary>
+        /// <param name="imgTemp"></param>
+        /// <param name="g"></param>
+        /// <param name="smallp"></param>
+        /// <param name="list"></param>
+        private static void drawBetContent02(Bitmap imgTemp, Graphics g, List<Point> list)
+        {
+            Pen smallp = new Pen(Color.Black, 24f);//小黑块画笔
+            foreach (Point item in list)
+            {
+                int newx = item.X + (int)Math.Floor((item.X - SPImageGlobal.LEFT_SMALL_BB_X) / SPImageGlobal.BB_WIDTH / 3d);
+                g.DrawLine(smallp, newx,
+                item.Y + 2 + (int)Math.Floor((item.Y - SPImageGlobal.START_POINT_Y) / (3d * SPImageGlobal.BB_HIGH)),
+                    newx + SPImageGlobal.BB_WIDTH - 4,
+                    item.Y + 2 + (int)Math.Floor((item.Y - SPImageGlobal.START_POINT_Y) / (3d * SPImageGlobal.BB_HIGH)));
+            }
+        }
+
+        /// <summary>
+        /// 绘制投注内容的点——北单
+        /// </summary>
+        /// <param name="imgTemp"></param>
+        /// <param name="g"></param>
+        /// <param name="smallp"></param>
+        /// <param name="list"></param>
+        private static void drawBetContent_BD(Bitmap imgTemp, Graphics g, List<Point> list,String play)
+        {
+            Pen bigp = new Pen(Color.Black, 15f);//大黑块画笔
+            bool isshort = play.StartsWith("2-");//除了胜平负。短票向右修正
+            foreach (Point item in list)
+            {
+                g.DrawLine(bigp, item.X + (isshort ? 0 : 4), item.Y, item.X + (isshort ? 0 : 4), item.Y + 25);
+            }
+        }
+
+        /// <summary>
+        /// 绘制一张空白图——通用方法
+        /// </summary>
+        /// <param name="bmp"></param>
+        /// <param name="g"></param>
+        /// <param name="bigp"></param>
+        /// <param name="smallp"></param>
+        private static void creatBlankScanPortImage(Bitmap bmp, Graphics g, SPImageStructure spis)
+        {
+            Pen bigp = new Pen(Color.Black, 11.7f);//大黑块画笔
+            Pen smallp = new Pen(Color.Black, SPImageGlobal.PLAY_SMALL_BB_HIGH);//小黑块画笔
+
+            String[] playCode = spis.getPTypeHeadDesc();
+            //第一步：开始标识、左边黑线、结束标识
+            int endy = 0;
+            g.DrawLine(bigp, SPImageGlobal.START_POINT_X, SPImageGlobal.START_POINT_Y, SPImageGlobal.START_POINT_X + SPImageGlobal.BB_WIDTH, SPImageGlobal.START_POINT_Y);
+            for (int i = 1; i <= spis.getStructureHigh() / SPImageGlobal.BB_HIGH; i++)
+            {
+                endy = SPImageGlobal.START_POINT_Y + i * SPImageGlobal.BB_HIGH + (int)Math.Floor(i / 3d);
+
+                g.DrawLine(bigp, SPImageGlobal.START_POINT_X, endy, SPImageGlobal.START_POINT_X + SPImageGlobal.BB_WIDTH, endy);
+            }
+
+            bigp.Width += 4;
+            g.DrawLine(bigp, 640 - SPImageGlobal.BB_WIDTH-10,endy + SPImageGlobal.BB_WIDTH, 640,endy + SPImageGlobal.BB_WIDTH);
+            //第二步：绘制玩法
+            for (int i = 0; i < playCode.Length; i++)
+            {
+                for (int j = 0; j < playCode[i].Length; j++)
+                {
+                    if (playCode[i][j] == '1')
+                    {
+                        g.DrawLine(smallp, SPImageGlobal.LEFT_SMALL_BB_X + j * SPImageGlobal.S2S_WIDTH + (int)Math.Floor(j / 3d),
+                            SPImageGlobal.START_POINT_Y + i * SPImageGlobal.BB_HIGH+SPImageGlobal.B2S_HIGH,
+                        SPImageGlobal.LEFT_SMALL_BB_X + j * SPImageGlobal.S2S_WIDTH + SPImageGlobal.BB_WIDTH + (int)Math.Floor(j / 3d),
+                        SPImageGlobal.START_POINT_Y + i * SPImageGlobal.BB_HIGH + SPImageGlobal.B2S_HIGH);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 双色球投注单初始票面
+        /// </summary>
+        /// <param name="imgTemp"></param>
+        /// <param name="g"></param>
+        /// <param name="spis"></param>
+        private static void creatBlankScanPortImage02(Bitmap imgTemp, Graphics g, SPImageStructure spis)
+        {
+            Pen bigp = new Pen(Color.Black, 17.1f);//大黑块画笔
+            Pen smallp = new Pen(Color.Black, 11.7f);//小黑块画笔
+
+            //String[] playCode = spis.getPTypeHeadDesc();
+            ////第一步：开始标识、左边黑线、结束标识
+            int endy = 1547;
+            g.DrawLine(bigp, 22, SPImageGlobal.START_POINT_Y, 22 + 20, SPImageGlobal.START_POINT_Y);
+            g.DrawLine(bigp, 22, endy, 22 + 20, endy);
+            g.DrawLine(smallp, 317, endy, SPImageGlobal.BB_WIDTH + 317, endy);
+            g.DrawLine(smallp, 465, endy, SPImageGlobal.BB_WIDTH + 465, endy);
+
+
+        }
+
+        /// <summary>
+        /// 绘制一张空白图——北单专用
+        /// </summary>
+        /// <param name="bmp"></param>
+        /// <param name="g"></param>
+        /// <param name="bigp"></param>
+        /// <param name="smallp"></param>
+        private static void creatBlankScanPortImage_BD(Bitmap bmp, Graphics g, SPImageStructure spis,String play)
+        {
+            Pen bigp = new Pen(Color.Black, 15f);//大黑块画笔
+            Pen smallp = new Pen(Color.Black, 1f);//大黑块画笔
+
+            bool isshort = play.StartsWith("2-");
+            int THIS_BB_HIGH = isshort ? SPImageGlobal.BD_BB_HIGH : SPImageGlobal.BD_BB_HIGH_SHORT;
+            int head_line_num = play.StartsWith("3-") ? 11 : 13;
+            int this_head_bb_width = play.StartsWith("3-") ? SPImageGlobal.BDBF_HEAD_BB_WIDTH : SPImageGlobal.BD_HEAD_BB_WIDTH;
+
+            String[] playCode = spis.getPTypeHeadDesc();
+            //第一步：绘制头上的13条线
+            for (int i = 0; i < head_line_num; i++)
+            {
+                g.DrawLine(bigp, SPImageGlobal.START_POINT_X_BD + i * this_head_bb_width + (isshort ? 0 : 4),
+                    SPImageGlobal.START_POINT_Y,
+                 SPImageGlobal.START_POINT_X_BD + i * this_head_bb_width + (isshort ? 0 : 4), 
+                 SPImageGlobal.START_POINT_Y + 25);
+            }
+
+            //第二步：绘制玩法
+            for (int i = 0; i < playCode.Length; i++)
+            {
+                for (int j = 0; j < playCode[i].Length; j++)
+                {
+                    if (playCode[i][j] == '1')
+                    {
+                        g.DrawLine(bigp, SPImageGlobal.START_POINT_X_BD + (head_line_num-1) * this_head_bb_width,
+                            SPImageGlobal.START_POINT_Y + (j + 1) * THIS_BB_HIGH + (isshort ? 0 : -6),
+                        SPImageGlobal.START_POINT_X_BD + (head_line_num - 1) * this_head_bb_width,
+                        SPImageGlobal.START_POINT_Y + (j + 1) * THIS_BB_HIGH + 25 + (isshort ? 0 : -6));
+                    }
+                    else
+                    {
+                        g.DrawLine(smallp, SPImageGlobal.START_POINT_X_BD + (head_line_num - 1) * this_head_bb_width,
+                            SPImageGlobal.START_POINT_Y + (j + 1) * THIS_BB_HIGH + (isshort ? 0 : -6),
+                        SPImageGlobal.START_POINT_X_BD + (head_line_num - 1) * this_head_bb_width,
+                        SPImageGlobal.START_POINT_Y + (j + 1) * THIS_BB_HIGH + 1 + (isshort ? 0 : -6));
+                    }
+                }
+            }           
+        }
+
+        /// <summary>
+        /// 把图片转换成1位深度的黑白图
+        /// </summary>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        private static System.Drawing.Bitmap FaqCopyTo1bpp(System.Drawing.Bitmap b)
+        {
+            int w = b.Width, h = b.Height;
+            System.Drawing.Rectangle r = new System.Drawing.Rectangle(0, 0, w, h);
+            if (b.PixelFormat != System.Drawing.Imaging.PixelFormat.Format32bppPArgb)
+            {
+                System.Drawing.Bitmap temp = new System.Drawing.Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(temp);
+                g.DrawImage(b, r, 0, 0, w, h, System.Drawing.GraphicsUnit.Pixel);
+                g.Dispose();
+                b = temp;
+            }
+            System.Drawing.Imaging.BitmapData bdat = b.LockBits(r, System.Drawing.Imaging.ImageLockMode.ReadOnly, b.PixelFormat);
+            System.Drawing.Bitmap b0 = new System.Drawing.Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
+            System.Drawing.Imaging.BitmapData b0dat = b0.LockBits(r, System.Drawing.Imaging.ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    int index = y * bdat.Stride + (x * 4);
+                    if (System.Drawing.Color.FromArgb(System.Runtime.InteropServices.Marshal.ReadByte(bdat.Scan0, index + 2), System.Runtime.InteropServices.Marshal.ReadByte(bdat.Scan0, index + 1), System.Runtime.InteropServices.Marshal.ReadByte(bdat.Scan0, index)).GetBrightness() > 0.5f)
+                    {
+                        int index0 = y * b0dat.Stride + (x >> 3);
+                        byte p = System.Runtime.InteropServices.Marshal.ReadByte(b0dat.Scan0, index0);
+                        byte mask = (byte)(0x80 >> (x & 0x7));
+                        System.Runtime.InteropServices.Marshal.WriteByte(b0dat.Scan0, index0, (byte)(p | mask));
+                    }
+                }
+            }
+            b0.UnlockBits(b0dat);
+            b.UnlockBits(bdat);
+            return b0;
+        }
+
+        /// <summary>
+        /// 检查投注单是否支持
+        /// </summary>
+        /// <param name="lottery_ticket"></param>
+        /// <returns></returns>
+        public static bool slipIsSupport(lottery_ticket lt)
+        {
+            if (lt.license_id == 9 && lt.play_type.StartsWith("6-"))//竞彩足球
+            {
+                String[] betcodes = lt.bet_code.Split('|');
+                if (betcodes.Length > 6)//大于6关只能是胜平负和让球胜平负
+                {
+                    for (int i = 0; i < betcodes.Length; i++)
+                    {
+                        String m = betcodes[i].Split(':')[1].Split('-')[0];
+                        if (!m.Equals("1") && !m.Equals("2"))
+                        {
+                            return false;
+                        }
+                    }
+                }
+                else if (betcodes.Length > 3)
+                {
+                    for (int i = 0; i < betcodes.Length; i++)
+                    {
+                        String m = betcodes[i].Split(':')[1].Split('-')[0];
+                        if (!m.Equals("1") && !m.Equals("2") && !m.Equals("3"))
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            }
+            else if (lt.license_id == 8 && lt.play_type.StartsWith("6-"))
+            {
+                String[] betcodes = lt.bet_code.Split('|');
+                if (betcodes.Length > 3)
+                {
+                    for (int i = 0; i < betcodes.Length; i++)
+                    {
+                        String m = betcodes[i].Split(':')[1].Split('-')[0];
+                        if (m.Equals("3"))
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            }
+            else if (lt.license_id == 1)
+            {
+                if (!(lt.play_type.Equals(PL3PlayType.PLSZHXDS)||
+                    lt.play_type.Equals(PL3PlayType.PLSZHXFS)||
+                    lt.play_type.Equals(PL3PlayType.PLSZHXZHFS)||
+                    lt.play_type.Equals(PL3PlayType.PLSZXDS)||
+                    lt.play_type.Equals(PL3PlayType.PLSZLDS)))//直选和值不支持
+                {
+                    return false;
+                }
+            }
+            else if (lt.license_id == 21)//北单，编号大于99的不能出
+            {
+                bool issupport = true;
+                String[] codes = lt.bet_code.Split('|');
+                for (int i = 0; i < codes.Length; i++)
+                {
+                    String[] qqhq = codes[i].Split(':');
+                    int rnum = 1;
+                    int.TryParse(qqhq[0].Substring(8, qqhq[0].Length - 8), out rnum);
+                    if (rnum>99)
+                    {
+                        issupport = false;
+                        break;
+                    }                    
+                }
+
+                //暂时没有胜负过关的投注单
+                if (lt.play_type.StartsWith("1-"))
+                {
+                    issupport = false;
+                }
+
+                return issupport;
+            }
+            else if (lt.license_id == 13 || lt.license_id == 12 /*||lt.license_id == 11*/ || lt.license_id == 20 || lt.license_id == 22 ||
+                lt.license_id == 23 || lt.license_id > 200)
+            {
+                return false;
+            }
+            else if (lt.license_id == 11 && lt.play_type.Equals(SSQPlayType.DT))//双色球
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+
+        /// <summary>
+        /// 拆分票
+        /// </summary>
+        /// <param name="lottery_ticket"></param>
+        /// <returns></returns>
+        public static List<lottery_ticket> splitLotteryTicket(lottery_ticket lt)
+        {
+            List<lottery_ticket> ltlist = new List<lottery_ticket>();
+            if ((lt.license_id == 6 || lt.license_id == 7 || lt.license_id == 8) && lt.play_type.Equals("1"))//只能打3注
+            {
+                ltlist = TicketSplitUtil.splitByBetNum(lt, 3);
+            }
+            else if (lt.license_id == 2 && lt.play_type.Equals("1"))//只能打4注
+            {
+                //先拆倍数
+                List<lottery_ticket> templist = TicketSplitUtil.splitByMuliplt(lt);
+
+                foreach (lottery_ticket item in templist)
+                {
+                    List<lottery_ticket> templist2 = TicketSplitUtil.splitByBetNum(item, 4);
+                    foreach (lottery_ticket item2 in templist2)
+                    {
+                        ltlist.Add(item2);
+                    }
+                }
+            }
+            else if (lt.license_id == 1)
+            {
+                //先拆倍数
+                List<lottery_ticket> templist = TicketSplitUtil.splitByMuliplt(lt);
+
+                foreach (lottery_ticket item in templist)
+                {
+                    List<lottery_ticket> templist2 = TicketSplitUtil.splitByBetNum(item, 4);
+                    foreach (lottery_ticket item2 in templist2)
+                    {
+                        List<lottery_ticket> templist3 = TicketSplitUtil.pl3TicketSplit(item2);
+                        foreach (lottery_ticket item3 in templist3)
+                        {
+                            ltlist.Add(item3);
+                        }
+                    }
+                }
+            }
+            else if (lt.license_id >= 100 && lt.license_id <= 200)
+            {
+                List<lottery_ticket> templist = TicketSplitUtil.syx5TicketSplit(lt);
+                foreach (lottery_ticket item in templist)
+                {
+                    ltlist.Add(item);
+                }
+            }
+            else if (lt.license_id == 11)//双色球
+            {
+                List<lottery_ticket> templist = TicketSplitUtil.ssqTicketSplit(lt);
+                foreach (lottery_ticket item in templist)
+                {
+                    ltlist.Add(item);
+                }
+            }
+            else
+            {
+                ltlist.Add(lt);
+            }
+
+            return ltlist;
+        }
+    }
+}

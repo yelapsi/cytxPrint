@@ -1,0 +1,12 @@
+记录时间：2016-04-14 09:57:30,677 出错类：Maticsoft.BLL.serviceimpl.LogServiceImpl property:[(null)] - 错误描述：初始化参数异常   在 Maticsoft.Controller.SystemSettingsController.getSysConfig() 位置 c:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\SystemSettingsController.cs:行号 25
+   在 Demo.Login.Login_Load(Object sender, EventArgs e) 位置 c:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\UIDemo\Login.cs:行号 120
+记录时间：2016-04-14 09:57:46,114 出错类：Maticsoft.BLL.serviceimpl.LogServiceImpl property:[(null)] - 错误描述：记录店主操作日志出错!Unable to open the database file
+记录时间：2016-04-14 09:59:16,242 出错类：Maticsoft.BLL.serviceimpl.LogServiceImpl property:[(null)] - 错误描述：记录店主操作日志出错!Unable to open the database file
+记录时间：2016-04-14 10:00:29,901 出错类：Maticsoft.BLL.serviceimpl.LogServiceImpl property:[(null)] - 错误描述：记录店主操作日志出错!Unable to open the database file
+记录时间：2016-04-14 10:00:47,161 出错类：Maticsoft.BLL.serviceimpl.LogServiceImpl property:[(null)] - 错误描述：记录店主操作日志出错!Unable to open the database file
+记录时间：2016-04-14 10:03:58,159 出错类：Maticsoft.BLL.serviceimpl.LogServiceImpl property:[(null)] - 错误描述：初始化参数异常   在 Maticsoft.Controller.SystemSettingsController.getSysConfig() 位置 c:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\SystemSettingsController.cs:行号 25
+   在 Demo.Login.Login_Load(Object sender, EventArgs e) 位置 c:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\UIDemo\Login.cs:行号 120
+记录时间：2016-04-14 10:04:21,645 出错类：Maticsoft.BLL.serviceimpl.LogServiceImpl property:[(null)] - 错误描述：记录店主操作日志出错!Unable to open the database file
+记录时间：2016-04-14 10:27:44,291 出错类：Maticsoft.BLL.serviceimpl.LogServiceImpl property:[(null)] - 错误描述：初始化参数异常   在 Maticsoft.Controller.SystemSettingsController.getSysConfig() 位置 c:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\SystemSettingsController.cs:行号 25
+   在 Demo.Login.Login_Load(Object sender, EventArgs e) 位置 c:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\UIDemo\Login.cs:行号 120
+记录时间：2016-04-14 10:28:13,496 出错类：Maticsoft.BLL.serviceimpl.LogServiceImpl property:[(null)] - 错误描述：记录店主操作日志出错!Unable to open the database file

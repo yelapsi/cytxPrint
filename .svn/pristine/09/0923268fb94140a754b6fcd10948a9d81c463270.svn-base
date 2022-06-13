@@ -1,0 +1,207 @@
+﻿using Maticsoft.BLL.ScanPortImage.imageStructure;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
+
+namespace Maticsoft.BLL.ScanPortImage
+{
+    public class SPImageGlobal
+    {
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 CON_GetSDKVersion(byte[] ListFilePath);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 CON_GetSupportPrinters(byte[] lpPrinters, Int32 len);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 CON_ConnectDevices(string prtName, String port, int timeout);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 CON_CloseDevices(int objCode);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 CON_QueryStatus(int objCode);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 CON_PageStart(int objCode, bool graphicMode, int width, int height);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 CON_PageEnd(int objCode, int tm);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 ASCII_CtrlBlackMark(int objCode);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 ASCII_PrintText(int objCode, string szText);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 ASCII_Print1DBarcode(int objCode, int bcType, int iWidth, int iHeight, int hri, string strData);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 ASCII_Print2DBarcode(int objCode, int type2D, string strPrint, int version, int ecc, int size);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 ASCII_CtrlCutPaper(int objCode, int cutWay, int postion);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 CON_PageSend(int objCode);
+
+        [DllImport("PrintSDK.dll", CharSet = CharSet.Unicode)]
+        public static extern Int32 CON_PrintFile(int objCode, string szPath);
+
+        //用于打印首页通道切换时打印机型号、工作端口、打印机状态等文本的设置
+        public delegate void AlterPrinting();
+        public static AlterPrinting alterPrinting = null;
+
+        //public static Boolean IS_PRINT_SCAN_IMAGE = true;//测试，之后会删掉
+        private static Boolean isPrintScanImage = true;//测试，之后会删掉
+
+        public static Boolean IS_PRINT_SCAN_IMAGE
+        {
+            get { return SPImageGlobal.isPrintScanImage; }
+            set
+            {
+                SPImageGlobal.isPrintScanImage = value;
+
+                if (alterPrinting != null)
+                {
+                    alterPrinting();
+                }
+            }
+        }
+
+        /// <summary>
+        /// //开始标识的起点X坐标
+        /// </summary>
+        public const int START_POINT_X = 10;
+        /// <summary>
+        /// //开始标识的起点Y坐标
+        /// </summary>
+        public const int START_POINT_Y = 50;
+        /// <summary>
+        /// //大黑块的高度
+        /// </summary>
+        public const int BIG_BB_HIGH = 9;
+        /// <summary>
+        /// //小黑块的高度
+        /// </summary>
+        public const int SMALL_BB_HIGH = 8;
+        /// <summary>
+        /// //黑块的宽度——大小黑块的宽度一致
+        /// </summary>
+        public const int BB_WIDTH = 30;
+        /// <summary>
+        /// //两个黑块起点的高度差——是指起点的高度差，不是中间的空白
+        /// </summary>
+        public const int BB_HIGH = 43;
+        /// <summary>
+        /// //最左边的赛事大框的起点的X值
+        /// </summary>
+        public const int LEFT_RACE_START_X = 42;
+
+        /// <summary>
+        /// //最左边的小横杠的起点的X值
+        /// </summary>
+        public const int LEFT_SMALL_BB_X = 48;
+
+        /// <summary>
+        /// //赛事块的宽度
+        /// </summary>
+        public const int RACE_BLOCK_WIDTH = 168;
+        /// <summary>
+        /// //两个小块之间的宽度间隔
+        /// </summary>
+        public const int S2S_WIDTH = 13;
+
+        /// <summary>
+        /// 各种票面对应的玩法字符串
+        /// </summary>
+        public static Dictionary<String, String[]> PTYPE_HEAD_DESC_DICTIONARY = new Dictionary<string, string[]>() {
+            {"JCLQ_SF_3G",new String[]{"0111110011100"}},//竞彩篮球-胜负-3关
+            {"JCLQ_SF_6G",new String[]{"0011110011010"}},//竞彩篮球-胜负-6关
+            {"JCLQ_SF_8G",new String[]{"1000101011110"}},//竞彩篮球-胜负-8关
+            {"JCLQ_RFSF_3G",new String[]{"1111110011100"}},//竞彩篮球-让分胜负-3关
+            {"JCLQ_RFSF_6G",new String[]{"1011110011010"}},//竞彩篮球-让分胜负-6关
+            {"JCLQ_RFSF_8G",new String[]{"0100101011110"}},//竞彩篮球-让分胜负-8关
+            {"JCLQ_DXF_3G",new String[]{"1100110011100"}},//竞彩篮球-大小分-3关
+            {"JCLQ_DXF_6G",new String[]{"1000010011010"}},//竞彩篮球-大小分-6关
+            {"JCLQ_DXF_8G",new String[]{"1100101011110"}},//竞彩篮球-大小分-8关
+            {"JCLQ_SFC_3G",new String[]{"0001100100010"}},//竞彩篮球-胜分差-3关
+            {"JCLQ_SFC_6G",new String[]{""}},//竞彩篮球-胜分差-6关
+            {"JCLQ_SFC_8G",new String[]{""}},//竞彩篮球-胜分差-8关
+            {"JCLQ_HHGG_3G",new String[]{"1010101011010","0010000000000"}},//竞彩篮球-混合过关-3关
+            {"JCLQ_HHGG_6G",new String[]{"1010101001110","1010000000000"}},//竞彩篮球-混合过关-6关
+            {"JCLQ_HHGG_8G",new String[]{"1010101011001","0110000000000"}},//竞彩篮球-混合过关-8关
+
+            {"JCZQ_SPF_3G",new String[]{"1000110011100"}},//竞彩足球-胜平负-3关
+            {"JCZQ_SPF_6G",new String[]{"0101110011010"}},//竞彩足球-胜平负-6关
+            {"JCZQ_SPF_8G",new String[]{"0000101011110"}},//竞彩足球-胜平负-8关
+            {"JCZQ_ZJQ_3G",new String[]{"1100100111100"}},//竞彩足球-总进球-3关
+            {"JCZQ_ZJQ_6G",new String[]{"0001110000110"}},//竞彩足球-总进球-6关
+            {"JCZQ_ZJQ_8G",new String[]{""}},//竞彩足球-总进球-8关
+            {"JCZQ_BQC_3G",new String[]{"0100110000010"}},//竞彩足球-半全场-3关
+            {"JCZQ_BQC_6G",new String[]{"1110110010110"}},//竞彩足球-半全场-6关
+            {"JCZQ_BQC_8G",new String[]{""}},//竞彩足球-半全场-8关
+            {"JCZQ_BF_3G",new String[]{"0100001101010"}},//竞彩足球-比分-3关
+            {"JCZQ_BF_6G",new String[]{"0110110001001"}},//竞彩足球-比分-6关
+            {"JCZQ_BF_8G",new String[]{""}},//竞彩足球-比分-8关
+            {"JCZQ_HHGG_3G",new String[]{"1010101011110","0001000000000"}},//竞彩足球-混合过关-3关
+            {"JCZQ_HHGG_6G",new String[]{"1010101001110","0100000000000"}},//竞彩足球-混合过关-6关
+            {"JCZQ_HHGG_8G",new String[]{"1010101110001","0101000000000"}}//竞彩足球-混合过关-8关
+        };
+
+
+        /// <summary>
+        /// 过关方式
+        /// </summary>
+        public static Dictionary<int, String[][]> GGFS_STR_ARRAY = new Dictionary<int, string[][]>() { 
+        {3,new String[][]{new String[]{"2c1","3c1","0c0","0c0","0c0","0c0","0c0","1c1"}}},
+        {6,new String[][]{new String[]{"4c1","4c4","4c5","4c6","4c11","0c0","0c0","1c1"},
+            new String[]{"5c1","5c5","5c6","5c10","5c16","5c20","5c26","0c0"},
+            new String[]{"6c1","6c6","6c7","6c15","6c20","6c22","6c35","6c42"},
+            new String[]{"6c50","6c57","0c0","0c0","0c0","0c0","0c0","0c0"}}},
+        {8,new String[][]{new String[]{"7c1","7c7","7c8","7c21","7c35","7c120","0c0","1c1"},
+            new String[]{"8c1","8c8","8c9","8c28","8c58","8c70","8c247"}}}
+        };
+
+        /// <summary>
+        /// 采种-玩法-串关   对应的票面结构
+        /// </summary>
+        public static Dictionary<String, SPImageStructure> SPISTRUCTURE_DICTIONARY = new Dictionary<string, SPImageStructure>() {
+            //竞彩篮球
+            {"10_1_3",new JCStructure("JCLQ","SF",3)},
+            {"10_1_6",new JCStructure("JCLQ","SF",6)},
+            {"10_1_8",new JCStructure("JCLQ","SF",8)},  
+            {"10_2_3",new JCStructure("JCLQ","RFSF",3)},
+            {"10_2_6",new JCStructure("JCLQ","RFSF",6)},
+            {"10_2_8",new JCStructure("JCLQ","RFSF",8)},
+            {"10_4_3",new JCStructure("JCLQ","DXF",3)},
+            {"10_4_6",new JCStructure("JCLQ","DXF",6)},
+            {"10_4_8",new JCStructure("JCLQ","DXF",8)},
+            {"10_3_3",new JCStructure("JCLQ","SFC",3)},
+            {"10_3_6",new JCStructure("JCLQ","SFC",6)},
+            {"10_3_8",new JCStructure("JCLQ","SFC",8)},
+            {"10_6_3",new JCStructure("JCLQ","HHGG",3)},
+            {"10_6_6",new JCStructure("JCLQ","HHGG",6)},
+            {"10_6_8",new JCStructure("JCLQ","HHGG",8)},
+
+            //竞彩足球
+            {"9_1_3",new JCStructure("JCZQ","SPF",3)},
+            {"9_1_6",new JCStructure("JCZQ","SPF",6)},
+            {"9_1_8",new JCStructure("JCZQ","SPF",8)},  
+            {"9_3_3",new JCStructure("JCZQ","ZJQ",3)},
+            {"9_3_6",new JCStructure("JCZQ","ZJQ",6)},
+            {"9_3_8",new JCStructure("JCZQ","ZJQ",8)},
+            {"9_4_3",new JCStructure("JCZQ","BQC",3)},
+            {"9_4_6",new JCStructure("JCZQ","BQC",6)},
+            {"9_4_8",new JCStructure("JCZQ","BQC",8)},
+            {"9_5_3",new JCStructure("JCZQ","BF",3)},
+            {"9_5_6",new JCStructure("JCZQ","BF",6)},
+            {"9_5_8",new JCStructure("JCZQ","BF",8)},
+            {"9_6_3",new JCStructure("JCZQ","HHGG",3)},
+            {"9_6_6",new JCStructure("JCZQ","HHGG",6)},
+            {"9_6_8",new JCStructure("JCZQ","HHGG",8)}
+        };
+    }
+}

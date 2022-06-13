@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AutoUpdater>
+  <AppName>WinUpdate</AppName>
+  <ReleaseDate>2012/3/20 18:45:45</ReleaseDate>
+  <ReleaseVersion>2.0.3.21</ReleaseVersion>
+  <MinVersion>2.0.1.01</MinVersion>
+  <UpdateDes>
+第一个版本从2.0.0.01开始，以后的变更信息会在cytx-version-info.version文件中描述。
+</UpdateDes>
+  <ApplicationStart>Demo.exe</ApplicationStart>
+  <ShortcutIcon></ShortcutIcon>
+  <Releases>
+  </Releases>
+</AutoUpdater>

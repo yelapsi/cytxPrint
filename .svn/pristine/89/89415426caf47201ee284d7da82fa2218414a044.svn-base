@@ -1,0 +1,162 @@
+﻿using Maticsoft.BLL.log;
+using Maticsoft.BLL.proController;
+using Maticsoft.Common;
+using Maticsoft.Common.dencrypt;
+using Maticsoft.Common.model;
+using Maticsoft.Common.model.httpmodel;
+using Maticsoft.Common.Util;
+using Maticsoft.Controller;
+using System;
+using System.Collections.Generic;
+using System.IO.Ports;
+using System.Threading;
+using System.Windows.Forms;
+
+namespace Demo
+{
+    public partial class FrmReTicket : Form
+    {
+        lottery_ticket lt = null;
+        public FrmReTicket(lottery_ticket lticket)
+        {
+            InitializeComponent();
+            lt = lticket;
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void btnCancel_MouseEnter(object sender, EventArgs e)
+        {
+            ((Control)sender).BackgroundImage = this.btnReTicket.BackgroundImage = global::Demo.Properties.Resources.btnPrintFocused;
+        }
+
+        private void btnCancel_MouseLeave(object sender, EventArgs e)
+        {
+            ((Control)sender).BackgroundImage = this.btnReTicket.BackgroundImage = global::Demo.Properties.Resources.btnPrintUnfocused;
+        }
+
+        private void FrmReTicket_Load(object sender, EventArgs e)
+        {
+            //初始化串口下拉框
+            foreach (store_machine sm in Global.storeMachineList)
+            {
+                ComboboxItem item = new ComboboxItem(sm, sm.com_name+"***"+ sm.machine_name);
+                this.cBoxCOM.Items.Add(item);
+            }
+
+            if (this.cBoxCOM.Items.Count > 0)
+            {
+                this.cBoxCOM.SelectedIndex = 0;
+            }
+        }
+
+
+        /// <summary>
+        /// 重新出票
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnReTicket_Click(object sender, EventArgs e)
+        {
+            this.tBox_reTicketMsg.Text = "";//清空显示区
+            store_machine sm = (store_machine)((ComboboxItem)this.cBoxCOM.SelectedItem).Key;            
+            SerialPort sp = new SerialPort();
+            SerialPortInfo spinfo = null;
+
+            this.tBox_reTicketMsg.Text += "*****开始初始化串口信息*****"+Environment.NewLine;
+
+            //每次打开时重新赋值，有可能在设置中修改过对应的值了
+            sp.BaudRate = (int)sm.com_baudrate;
+            sp.PortName = sm.com_name;
+            sp.DataBits = (int)sm.com_databits;
+            sp.StopBits = GlobalConstants.StopBitsDic[sm.com_stopbits];
+            sp.Parity = GlobalConstants.ParityDic[sm.com_parity];
+
+            this.tBox_reTicketMsg.Text += "*****初始化串口信息成功*****" + Environment.NewLine;
+            this.tBox_reTicketMsg.Text += "*****开始检测串口信息*****" + Environment.NewLine;
+            //检测串口            
+            if (!sp.IsOpen)
+            {
+                this.tBox_reTicketMsg.Text += "*****检测串口信息,可用*****" + Environment.NewLine;
+                try
+                {
+                    this.tBox_reTicketMsg.Text += "*****打开串口*****" + Environment.NewLine;
+                    sp.Open();
+                    this.tBox_reTicketMsg.Text += "*****打开串口,成功*****" + Environment.NewLine;
+
+                    //初始化数字间隔
+                    this.tBox_reTicketMsg.Text += "*****初始化数字间隔*****" + Environment.NewLine;
+                    spinfo = new SerialPortInfo(sp, sm);
+                    spinfo.Ticket = this.lt;
+                    this.tBox_reTicketMsg.Text += "*****初始化数字间隔" + (digitalIntervalInit(spinfo) ? "成功" : "失败") + "*****" + Environment.NewLine;
+
+                    this.tBox_reTicketMsg.Text += "*****向彩机传输出票数据*****" + Environment.NewLine;
+                    Thread.Sleep(50);
+                    BaseProController bpc = new BaseProController(spinfo);
+                    bpc.ReTicketProcessHandler();
+                    
+                }
+                catch (Exception)
+                {
+                    //串口打开失败
+                    this.tBox_reTicketMsg.Text += "*****打开串口,失败*****" + Environment.NewLine;
+                }
+                finally {
+                     this.tBox_reTicketMsg.Text += "*****关闭串口*****" + Environment.NewLine;
+                    sp.Close();
+                    sp = null;
+                    spinfo = null;
+                }
+            }
+            else
+            {
+                //串口已经打开
+                this.tBox_reTicketMsg.Text += "*****串口被占用,如果您正在出票，请先停止出票*****" + Environment.NewLine;
+            }
+        }
+
+        /// <summary>
+        /// 数字间隔初始化
+        /// </summary>
+        /// <param name="s"></param>
+        private  bool digitalIntervalInit(SerialPortInfo spinfo)
+        {
+            bool result = true;
+            if (Global.SLC_DICTIONARY.ContainsKey(spinfo.MacInfo.speed_level.ToString()))
+            {
+                byte[] sendcmdF0 = new byte[256], sendcmdF1 = new byte[256];
+                int sendcmdlength = 0;
+                String Intervals = Global.SLC_DICTIONARY[spinfo.MacInfo.speed_level.ToString()].digital_interval.ToString("X2");
+
+                byte[] startCommandF0 = CommandProcessor.HexDataToCommand(new String[] { "F0", Intervals });
+                Array.Copy(startCommandF0, 0, sendcmdF0, sendcmdlength, startCommandF0.Length);
+
+                sendcmdlength += 2;
+                sendcmdF0 = CommandProcessor.packCommand(sendcmdF0, GlobalConstants.cmdSign_KV[GlobalConstants.BASE_CMD.KEYBOARD], sendcmdlength);
+
+                String cmd = CommandProcessor.bytesToHexString(sendcmdF0);
+                result = SerialPortUtil.writeData(spinfo.Sp, sendcmdF0, sendcmdlength + 10);
+                if (result)
+                {
+                    sendcmdlength = 0;
+                    byte[] startCommandF1 = CommandProcessor.HexDataToCommand(new String[] { "F1", Intervals });
+                    Array.Copy(startCommandF1, 0, sendcmdF1, sendcmdlength, startCommandF1.Length);
+
+                    sendcmdlength += 2;
+                    sendcmdF1 = CommandProcessor.packCommand(sendcmdF1, GlobalConstants.cmdSign_KV[GlobalConstants.BASE_CMD.KEYBOARD], sendcmdlength);
+                    cmd = CommandProcessor.bytesToHexString(sendcmdF1);
+                    result = SerialPortUtil.writeData(spinfo.Sp, sendcmdF1, sendcmdlength + 10);
+                }
+            }
+            else
+            {
+                result = false;
+            }
+
+            return result;
+        }
+    }
+}

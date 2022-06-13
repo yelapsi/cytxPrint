@@ -1,0 +1,13 @@
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\bin\Debug\Maticsoft.Controller.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\bin\Debug\Maticsoft.Controller.pdb
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\bin\Debug\Maticsoft.BLL.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\bin\Debug\Maticsoft.Common.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\bin\Debug\System.Data.SQLite.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\bin\Debug\log4net.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\bin\Debug\OpenSmtp.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\bin\Debug\Maticsoft.BLL.pdb
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\bin\Debug\Maticsoft.Common.pdb
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\obj\Debug\Controller.csprojResolveAssemblyReference.cache
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\obj\Debug\Maticsoft.Controller.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\Controller\obj\Debug\Maticsoft.Controller.pdb

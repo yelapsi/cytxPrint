@@ -1,0 +1,27 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Text;
+
+namespace Maticsoft.BLL.ScanPortImage.imageStructure
+{
+    public class MultipleDataBlock:ImageDataBlock
+    {
+        public MultipleDataBlock(int startx, int starty)
+        {
+            this.startPoint = new System.Drawing.Point(startx, starty);
+        }
+
+        /// <summary>
+        /// 取倍数对应的点的位置
+        /// </summary>
+        /// <param name="pointlist"></param>
+        /// <param name="data"></param>
+        public override void getPointArrayByData(List<Point> pointlist, string data)
+        {
+            int multiple = 0;
+            int.TryParse(data, out multiple);
+            this.getSMGMultiplePoints(pointlist, multiple,this.startPoint);
+        }
+    }
+}

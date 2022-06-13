@@ -1,0 +1,43 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Text;
+using System.Windows.Forms;
+
+namespace Demo
+{
+    public partial class FrmInit : Form
+    {
+        public FrmInit()
+        {
+            InitializeComponent();
+        }
+
+        private void picClose_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void picClose_MouseEnter(object sender, EventArgs e)
+        {
+            ((Control)sender).BackgroundImage = global::Demo.Properties.Resources.btnCloseEnter;
+        }
+
+        private void picClose_MouseLeave(object sender, EventArgs e)
+        {
+            ((Control)sender).BackgroundImage = global::Demo.Properties.Resources.btnClose;
+        }
+
+        private void btnUpdateSysParam_MouseEnter(object sender, EventArgs e)
+        {
+            ((Control)sender).BackgroundImage = global::Demo.Properties.Resources.btnSaveModificationEnter;
+        }
+
+        private void btnUpdateSysParam_MouseLeave(object sender, EventArgs e)
+        {
+            ((Control)sender).BackgroundImage = global::Demo.Properties.Resources.btnSaveModification;
+        }
+    }
+}

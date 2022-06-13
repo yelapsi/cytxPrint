@@ -1,0 +1,538 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.IO.Ports;
+using System.Text;
+using System.Threading;
+using Maticsoft.BLL.proController;
+using Maticsoft.Common;
+using Maticsoft.Common.Util;
+using Maticsoft.Common.model;
+using Maticsoft.BLL.serviceimpl;
+using Maticsoft.Common.dencrypt;
+using Maticsoft.BLL.log;
+using Maticsoft.BLL.cmdResolve;
+using Maticsoft.BLL.comparison;
+
+namespace Maticsoft.Controller.Scheduler
+{
+    public class SerialInteriorScheduler
+    {
+
+        private SerialPortInfo spinfo;//串口资源
+        private BaseProController bpc = null;
+        private PrintTicketServiceImpl printbll = new PrintTicketServiceImpl();
+
+        private Boolean fbDataChannelInitState = false;//回收数据通道
+        private int CorrectCount = 1;//修正标识数
+
+        private static String lockcomcmdobj = "lockcomcmdobj";
+        private static String lockinfoobj = "lockinfoobj";
+        private StringBuilder resultCMDSB = new StringBuilder();//串口读取数据存储
+        private StringBuilder threadCMDSB = new StringBuilder();//线程处理数据临时存储
+        private StringBuilder threadInfoSB = new StringBuilder();//线程处理票花数据临时存储
+
+        /// <summary>
+        /// 构造方法
+        /// </summary>
+        /// <param name="sp">串口</param>
+        /// <param name="isAvailable">串口目前是否可用(未打开或是被占用均为“N)</param>
+        /// <param name="canNextStep">是否可进行下一步</param>
+        /// <param name="macInfo">出票机器信息</param>
+        /// <param name="ticket">要处理的彩票数据</param>
+        public SerialInteriorScheduler(SerialPort sp, store_machine macInfo)
+        {
+            spinfo = new SerialPortInfo(sp, macInfo);
+            bpc = new BaseProController(spinfo);            
+
+            //spinfo.Sp.DataReceived +=Sp_DataReceived;//读取串口数据
+            //初始化所有的线程
+            ThreadPool.QueueUserWorkItem(new WaitCallback(readTicketScheduler));//读需要出的票的线程
+            ThreadPool.QueueUserWorkItem(new WaitCallback(ticketPrintScheduler));//打票线程
+            ThreadPool.QueueUserWorkItem(new WaitCallback(readResultCMDScheduler));//处理出票结果命令的线程
+            ThreadPool.QueueUserWorkItem(new WaitCallback(opResultCMDScheduler));//处理出票结果命令的线程
+            ThreadPool.QueueUserWorkItem(new WaitCallback(opResultInfoScheduler));//处理出票票花结果的线程
+        }
+
+        private void readResultCMDScheduler(object state)
+        {
+            while (true)
+            {
+                try
+                {
+                    if (this.Spinfo.Sp.IsOpen)
+                    {
+                        int combyteslength = this.Spinfo.Sp.BytesToRead;
+                        if (combyteslength > 0)
+                        {
+                            byte[] bytes = new byte[20480];//接收数据缓冲区
+                            this.Spinfo.Sp.Read(bytes, 0, bytes.Length);
+
+                            lock (lockcomcmdobj)
+                            {
+                                resultCMDSB.Append(BitConverter.ToString(bytes).Substring(0, combyteslength * 3));
+                                LogUtil.getInstance().addLogDataToQueue("当前缓冲区命令>>>>>" + resultCMDSB.ToString(), GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    LogUtil.getInstance().addLogDataToQueue("读取串口数据异常>>>>>" + e.StackTrace, GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+                }
+                finally {
+                    Thread.Sleep(10);
+                }
+                
+            }
+        }              
+
+        #region 读票调度
+
+        /// <summary>
+        /// 读票调度
+        /// </summary>
+        private void readTicketScheduler(object obj)
+        {
+            while (true)
+            {
+                readTicketHandler();
+         //默认时间间隔
+                Thread.Sleep(10);
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        private void readTicketHandler()
+        {
+            try
+            {
+                if (Spinfo.THIS_STATE == GlobalConstants.SerialPortInfoState.NORMAL_OPERATION
+                         && (Spinfo.InterruptState == GlobalConstants.InterruptState.INTERRUPT_NOT))
+                { //串口可用
+                    if (Spinfo.PRINT_STATE == GlobalConstants.PRINT_STATE_ENUM.WAIT_TICKET)
+                    {
+                        //LogUtil.addDataToQueue("可读票，开始读票", LogUtil.runTimeType);
+                        //查询当前需要出的票
+                        if (!String.IsNullOrEmpty(Spinfo.OrderId))
+                        {
+                            //读一张票
+                            String[] stateList = new String[] {
+                             GlobalConstants.ORDER_TICKET_STATE.ERROR_PRINTTING.ToString(),
+                             GlobalConstants.ORDER_TICKET_STATE.RE_PRINTTING.ToString(),
+                             GlobalConstants.ORDER_TICKET_STATE.PRINTTING.ToString()};
+                            Spinfo.Ticket = printbll.getTopOneTicket(Spinfo.OrderId, stateList);
+                            if (null != Spinfo.Ticket)
+                            {
+                                Spinfo.Ticket.bet_code = DESEncrypt.Decrypt(Spinfo.Ticket.bet_code, GlobalConstants.KEY);
+
+                                Spinfo.PRINT_STATE = GlobalConstants.PRINT_STATE_ENUM.WAIT_PRINT;
+                                CorrectCount = 1;//修正标识
+                                Spinfo.IsGetCMD = false;
+                                Spinfo.IsSendCMD = false;
+                                this.Spinfo.IsCanStop = false;//只要读到票了就不能关闭
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                LogUtil.getInstance().addLogDataToQueue("读票线程异常>>>订单号:" + e.StackTrace.ToString(), GlobalConstants.LOGTYPE_ENUM.EXCEOTION);
+            }           
+        }
+        #endregion
+
+        #region 出票调度器
+        /// <summary>
+        /// 出票调度器
+        /// </summary>
+        /// <param name="obj"></param>
+        private void ticketPrintScheduler(object obj)
+        {
+            while (true)
+            {
+                ticketPrintHandler();  
+                Thread.Sleep(10);
+            }
+        }
+
+        private void ticketPrintHandler() {
+            if (Spinfo.PRINT_STATE == GlobalConstants.PRINT_STATE_ENUM.WAIT_PRINT)
+            {
+                try
+                {
+                    //准备好票数据                                       
+                    LogUtil.getInstance().addLogDataToQueue("准备出票>>>订单号:" + Spinfo.OrderId + ",票ID:" + Spinfo.Ticket.ticket_id
+                        + ",彩种:" + Spinfo.Ticket.license_id + ",玩法:" + Spinfo.Ticket.play_type, GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+
+                    this.Spinfo.Send_data_millis = -1;//每一次都要重新赋值，保证数据的一致性(45秒的检查过期不用上次的值)
+                    //第一步:如果是有反馈的，打开反馈通道
+                    if (this.Spinfo.MacInfo.is_feed_back == GlobalConstants.TrueFalseSign.TRUE)
+                    {
+                        fbDataChannelInitState = false;//每次发送数据之前，都认为是没打开
+                        feedbackDataChannelInit(this.Spinfo);
+                        int round = 1;
+                        while (!fbDataChannelInitState && round<100)
+                        {
+                            round++;
+                            Thread.Sleep(10);  
+                        }
+                                                
+                    }
+
+                    Spinfo.PRINT_STATE = GlobalConstants.PRINT_STATE_ENUM.WAIT_PRINT_RESULT;//等待打印结果——放在这个位置主要是怕时间太快，很快过滤掉自己需要的数据
+                    bpc.ticketProcessHandler();
+                    Global.REVIOUSLT = Spinfo.Ticket;
+                }
+                catch (Exception e)
+                {
+                    LogUtil.getInstance().addLogDataToQueue("出票线程异常>>>订单号:" + Spinfo.OrderId + ",票ID:" + Spinfo.Ticket.ticket_id + e.StackTrace.ToString(), GlobalConstants.LOGTYPE_ENUM.EXCEOTION);
+                }
+                finally {                    
+                    Int64 dycms = this.dynamicTimeCalculator((int)Global.SLC_DICTIONARY[this.Spinfo.MacInfo.speed_level.ToString()].dynamic_interval_max,
+                            (int)Global.SLC_DICTIONARY[this.Spinfo.MacInfo.speed_level.ToString()].dynamic_interval_min)
+                            + (int)Global.SLC_DICTIONARY[this.Spinfo.MacInfo.speed_level.ToString()].ticket_interval;
+
+                    if (this.Spinfo.MacInfo.is_feed_back == 1)
+                    {
+                        if (Global.SysDateMillisecond - this.Spinfo.Send_data_millis < dycms)
+                        {
+                            //动态时间间隔+票间隔
+                            Thread.Sleep((int)(dycms - (Global.SysDateMillisecond - this.Spinfo.Send_data_millis)));
+                        }
+                    }
+                    else
+                    {
+                        Thread.Sleep((int)dycms);
+                    }
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// 动态时间计算器
+        /// </summary>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <returns></returns>
+        private int dynamicTimeCalculator(int max, int min)
+        {
+            if (max == min)
+            {
+                return max;
+            }
+
+            int diff = max - min;
+            Random r = new Random(DateTime.Now.Millisecond);
+            return min + r.Next(1000000) % diff;
+        }
+        #endregion
+
+        #region 处理出票结果调度器
+        private void opResultCMDScheduler(object state)
+        {
+            while (true)
+            {
+                opResultCMDHandler();
+                Thread.Sleep(10);
+            }
+        }
+
+        private void opResultCMDHandler()
+        {
+            try
+            {
+                if (resultCMDSB.Length > 0)
+                {
+                    lock (lockcomcmdobj)
+                    {
+                        threadCMDSB.Append(resultCMDSB.ToString());
+                        resultCMDSB.Remove(0, resultCMDSB.Length);
+                    }
+                }
+
+                if (threadCMDSB.Length > 0)
+                {
+                    StringBuilder TempData = new StringBuilder();
+                    //取第一条命令
+                    TempData.Append(CommandProcessor.getFristCmd(ref threadCMDSB));
+                    while (TempData.Length > 0)
+                    {
+                        LogUtil.getInstance().addLogDataToQueue("当前命令>>>>>" + TempData.ToString(), GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+                        if (TempData.ToString().Contains(GlobalConstants.BASE_CMD.RECEIVE_START_PRINT))//这条命令是打印数据
+                        {
+                            lock (lockinfoobj)
+                            {
+                                threadInfoSB.Append(TempData.Replace(GlobalConstants.BASE_CMD.RECEIVE_START_PRINT, "").Replace(GlobalConstants.BASE_CMD.CMD_END, ""));  
+                            }                            
+                        }
+                        else
+                        {
+                            //检查是否包含错误命令
+                            if (TempData.ToString().StartsWith(GlobalConstants.ERROR_CMD.ERROR_CMD_HEAD))
+                            {
+                                //包含错误命令
+                                errorOperationMethod(CmdResovleUtil.errorCmd2ErrorCode(TempData.ToString()), "", "");
+                            }//是否包含彩机已发送数据命令(作为继续发送下次数据的依据)
+                            else if (TempData.ToString().Contains(GlobalConstants.BASE_CMD.KEYBOARD_SENDDATA.ToUpper()))
+                            {
+                                if (this.Spinfo.PRINT_STATE == GlobalConstants.PRINT_STATE_ENUM.WAIT_PRINT)//打开反馈通道
+                                {
+                                    if (this.Spinfo.MacInfo.is_feed_back == 1 && !fbDataChannelInitState)//现在需要验证的是数据接收通道
+                                    {
+                                        fbDataChannelInitState = true;
+                                        LogUtil.getInstance().addLogDataToQueue("初始化数据通道,已发送键盘数据!", GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+                                    }
+                                }
+                                else if (this.Spinfo.PRINT_STATE == GlobalConstants.PRINT_STATE_ENUM.WAIT_PRINT_RESULT)
+                                {
+                                    if (!this.Spinfo.IsSendCMD)
+                                    {
+                                        this.Spinfo.IsSendCMD = true;
+                                        LogUtil.getInstance().addLogDataToQueue("已发送键盘数据!", GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+                                    }
+                                    else if (null != this.Spinfo.Ticket && TempData.ToString().Contains(
+                                  GlobalConstants.BASE_CMD.KEYBOARD_RECEVICEDATA.ToUpper())
+                                   && !this.Spinfo.IsGetCMD)
+                                    {
+                                        this.Spinfo.IsGetCMD = true;
+                                        LogUtil.getInstance().addLogDataToQueue("已接收键盘数据!", GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+                                    }
+                                }
+                            }
+                        }
+                        TempData.Remove(0, TempData.Length);
+                        TempData.Append(CommandProcessor.getFristCmd(ref threadCMDSB));
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                LogUtil.getInstance().addLogDataToQueue("解析回馈命令出现了异常!"+e.StackTrace, GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+            }
+        }
+        private void opResultInfoScheduler(object state)
+            {
+                while (true)
+                {
+                    try
+                    {
+                        //1、先看当前有没有正在出的票；2、是否发送错误；3、
+                        if (this.Spinfo.PRINT_STATE == GlobalConstants.PRINT_STATE_ENUM.WAIT_PRINT_RESULT)
+                        {
+                            if (this.Spinfo.IsError && this.Spinfo.ErrorCode.Equals(GlobalConstants.ERROR_CODE.SEND_DATA_FAIL))
+                            {//发送的时候就已经错误了
+                                errorOperationMethod(GlobalConstants.ERROR_CODE.SEND_DATA_FAIL, "", "");
+                            }
+                            else if (this.Spinfo.Send_data_millis > 100000
+                                   && (Global.SysDateMillisecond - this.Spinfo.Send_data_millis > 45000))//已经过了45秒还没搞定
+                            {
+                                if (!this.Spinfo.IsGetCMD && !this.Spinfo.IsSendCMD)
+                                {//未接收到键盘数据
+                                    if (!this.Spinfo.IsGetCMD)
+                                    {//未接收到键盘数据
+                                        errorOperationMethod(GlobalConstants.ERROR_CODE.KEYBOARD_NOT_RECEIVED_DATA, "", "");
+                                    }
+                                    else if (!this.Spinfo.IsSendCMD)
+                                    {//键盘未发送数据
+                                        errorOperationMethod(GlobalConstants.ERROR_CODE.KEYBOARD_NOT_SEND_DATA, "", "");
+                                    }
+                                }
+                                else
+                                {//未收到反馈信息
+                                    errorOperationMethod(GlobalConstants.ERROR_CODE.COMPARISON_DATA_FAIL, "", "");
+                                }
+
+                                //简单比对失败
+                                LogUtil.getInstance().addLogDataToQueue("票花命令为>>>>>" + threadInfoSB.ToString()
+                                    , GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+                            }
+                            else//发送时是正常的
+                            {
+                                if (this.Spinfo.MacInfo.is_feed_back == 1)//带反馈的机型
+                                {
+                                    if (threadInfoSB.Length > 0)
+                                    {
+                                        String print_data = String.Empty;
+                                        String ticketInfo = String.Empty;
+                                        String serialPort_Str = String.Empty;
+
+                                        lock (lockinfoobj)
+                                        {
+                                            serialPort_Str = threadInfoSB.ToString();
+                                            threadInfoSB.Remove(0, threadInfoSB.Length);
+                                            //取出完整的票花数据
+                                            if (CmdResovleUtil.getCompleteTicketData(ref serialPort_Str, ref print_data))
+                                            {
+                                                //如果已经取到了完整的票花，那么此时还收不到已发送数据的指令也没关系，不需要了
+                                                if (!this.Spinfo.IsSendCMD)
+                                                {
+                                                    this.Spinfo.IsSendCMD = true;
+                                                }
+                                                LogUtil.getInstance().addLogDataToQueue("取票花数据,有反馈，取到完整票花>>>>>" + print_data, GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+
+                                                ticketInfo = CmdResovleUtil.CMD2TicketInfo(print_data);
+                                                //记录日志
+                                                LogUtil.getInstance().addLogDataToQueue("解析票花>>>>" + ticketInfo, GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+                                                String resultStr = String.Empty;
+
+                                                //从解析的票面数据中得到所有要比对的节点的值
+                                                if (ComparisonUtil.comparisonFunction(this.Spinfo.Ticket, ticketInfo, out resultStr))
+                                                {
+                                                    //比对成功
+                                                    LogUtil.getInstance().addLogDataToQueue(this.Spinfo.Ticket.order_id + ";" + this.Spinfo.Ticket.ticket_id + ":" + resultStr + "取出出票赔率为:" + this.Spinfo.Ticket.ticket_odds
+                                                       , GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+                                                    succOperationMethod(ticketInfo, "有返馈出票成功");
+                                                }
+                                                else
+                                                {
+                                                    //简单比对失败
+                                                    LogUtil.getInstance().addLogDataToQueue(this.Spinfo.Ticket.order_id + ";" + this.Spinfo.Ticket.ticket_id + ":" + "比对失败>>>>>" + threadInfoSB.ToString()
+                                                        , GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+                                                    errorOperationMethod(GlobalConstants.ERROR_CODE.COMPARISON_DATA_FAIL, resultStr, ticketInfo);
+                                                    print_data = String.Empty;//清空打印数据
+                                                }
+                                            }//取出完整的票花数据
+
+                                            //回复数据
+                                            threadInfoSB.Append(serialPort_Str);
+                                        }                                        
+                                    }
+                                }
+                                else//不带反馈机型——只要判断其已发送数据即认为成功
+                                {
+                                    if (this.Spinfo.IsSendCMD)
+                                    {
+                                        //无返馈出票成功
+                                        LogUtil.getInstance().addLogDataToQueue("无返馈出票成功", GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);
+                                        succOperationMethod("", "无返馈出票成功");
+                                    }
+                                }                                
+                            }
+                        }
+                        else//当前不在打票
+                        {
+                            lock (lockinfoobj)//回复数据
+                            {
+                                threadInfoSB.Remove(0, threadInfoSB.Length);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        LogUtil.getInstance().addLogDataToQueue("处理票花命令出现了异常!" + e.StackTrace + threadInfoSB.ToString(), GlobalConstants.LOGTYPE_ENUM.TICKET_LOG); 
+                    }                   
+
+                    Thread.Sleep(10);
+                }
+            }
+        #endregion 处理出票结果调度器
+
+        /// <summary>
+        /// 错误时处理方法
+        /// </summary>
+        private void errorOperationMethod(String errorCode, String exceptionmsg, String ticketInfo)
+        {
+            try
+            {
+                //做错漏票处理
+                this.Spinfo.Ticket.ticket_state = GlobalConstants.ORDER_TICKET_STATE.ERROR.ToString();
+                this.Spinfo.Ticket.ticket_info = ticketInfo;
+                this.Spinfo.Ticket.exception_description = exceptionmsg;
+
+                bool r = printbll.ticketResultHandler(this.Spinfo.Ticket);
+                //记录该票的出票结果，用着界面展示依据
+                this.Spinfo.CompeletTicketIdStateQueue.Enqueue(new KeyValuePair<string, string>(this.Spinfo.Ticket.ticket_id.ToString(), GlobalConstants.ORDER_TICKET_STATE.ERROR.ToString()));
+
+                spinfo.IsError = true;
+                spinfo.ErrorCode = errorCode;
+                spinfo.ErrorMsg = GlobalConstants.ErrorCodeDictionary[spinfo.ErrorCode];
+                spinfo.ErrorState = GlobalConstants.ErrorState.UNTREATED;                
+
+                //记录日志
+                LogUtil.getInstance().addLogDataToQueue(String.Format(spinfo.ErrorMsg, Spinfo.MacInfo.com_name) 
+                    + ">>>>" + exceptionmsg, GlobalConstants.LOGTYPE_ENUM.TICKET_LOG);                
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+            finally {
+                spinfo.PRINT_STATE =  GlobalConstants.PRINT_STATE_ENUM.WAIT_CHECK;
+            }
+        }
+
+        /// <summary>
+        /// 成功时处理方法
+        /// </summary>
+        /// <param name="ticketResultStr"></param>
+        /// <param name="description"></param>
+        private void succOperationMethod(String ticketInfo, String ticketResultStr)
+        {
+            try
+            {
+                ticketInfo = SysUtil.ticketInfoToDBStr(ticketInfo);
+                if (this.Spinfo.Ticket.ticket_state == GlobalConstants.ORDER_TICKET_STATE.PRINTTING.ToString())
+                {
+                    this.Spinfo.Ticket.ticket_state = GlobalConstants.ORDER_TICKET_STATE.PRINTTING_COMPLETE.ToString();
+                }
+                else if (this.Spinfo.Ticket.ticket_state == GlobalConstants.ORDER_TICKET_STATE.ERROR_PRINTTING.ToString())
+                {
+                    this.Spinfo.Ticket.ticket_state = GlobalConstants.ORDER_TICKET_STATE.ERROR_COMPLETE.ToString();
+                }
+                else
+                {
+                    this.Spinfo.Ticket.ticket_state = GlobalConstants.ORDER_TICKET_STATE.RE_COMPLETE.ToString();
+                }
+
+                this.Spinfo.Ticket.ticket_info = ticketInfo;
+                this.Spinfo.Ticket.exception_description = ticketResultStr;
+
+                bool r = printbll.ticketResultHandler(this.Spinfo.Ticket);
+
+                //记录该票的出票结果，用着界面展示依据
+                this.Spinfo.CompeletTicketIdStateQueue.Enqueue(new KeyValuePair<string, string>(this.Spinfo.Ticket.ticket_id.ToString(),
+                    GlobalConstants.ORDER_TICKET_STATE.PRINTTING_COMPLETE.ToString()));                
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+            finally {
+                spinfo.PRINT_STATE = GlobalConstants.PRINT_STATE_ENUM.WAIT_CHECK;
+            }
+        }
+
+        /// <summary>
+        /// 反馈数据通道打开
+        /// </summary>
+        /// <param name="s"></param>
+        private void feedbackDataChannelInit(SerialPortInfo s)
+        {
+            try
+            {
+                String cmd = CommandProcessor.bytesToHexString(GlobalConstants.CMDByteArrays.feedbackDataChannelOpen);
+                bool b = SerialPortUtil.writeData(s.Sp, GlobalConstants.CMDByteArrays.feedbackDataChannelOpen, 11);
+
+                if (!b)
+                {//初始化系统失败
+                    s.IsError = true;
+                    s.ErrorCode = GlobalConstants.ERROR_CODE.FEEDBACKDATACHANNEL_INIT_FAIL;
+                    s.ErrorState = GlobalConstants.ErrorState.UNTREATED;
+                    s.ErrorMsg = String.Format(GlobalConstants.ErrorCodeDictionary[s.ErrorCode], s.Sp.PortName);
+                    s.PRINT_STATE = GlobalConstants.PRINT_STATE_ENUM.WAIT_CHECK;
+                }
+            }
+            catch (Exception e)
+            {
+                LogUtil.getInstance().addLogDataToQueue(e.StackTrace, GlobalConstants.LOGTYPE_ENUM.EXCEOTION);
+            }
+        }
+
+        public SerialPortInfo Spinfo { get { return spinfo; } set { spinfo = value; } }
+    }
+}
+

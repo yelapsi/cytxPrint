@@ -1,0 +1,166 @@
+﻿using Maticsoft.Common.model;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Text;
+
+namespace Maticsoft.BLL.ScanPortImage
+{
+    public class ScanPortImageUtil
+    {
+        public static Bitmap creatScanPortImage(lottery_ticket lt,int times)
+        {
+            SPImageStructure spis = SPImageGlobal.SPISTRUCTURE_DICTIONARY[getSPIKey(lt)];
+            //第一步：计算整个图片的高度(头上高度——文字内容加部分空白预留、扫描部分、尾部高度)
+            Bitmap imgTemp = new Bitmap(640, spis.getStructureHigh()+100);
+            Graphics g = Graphics.FromImage(imgTemp); //创建画板
+            g.Clear(Color.White);
+            Pen bigp = new Pen(Color.Black, 9.5f);//大黑块画笔
+            Pen smallp = new Pen(Color.Black, SPImageGlobal.SMALL_BB_HIGH);//小黑块画笔
+            Pen bigp2 = new Pen(Color.Black, 11.5f);//小黑块画笔
+            //第二步：写入订单信息
+            g.DrawString("订单:"+lt.order_id+",彩票编号:"+lt.ticket_id+"--"+times+",金额:"+lt.bet_price+"元     北京彩游天下", new Font("宋体", 16, GraphicsUnit.Pixel), SystemBrushes.ControlText, new Point(30, 10));
+            //第三步：绘制一张未填入打印内容的图片
+            creatBlankScanPortImage(imgTemp, g, bigp, smallp, spis);
+            //第四步：填入打印内容
+            drawBetContent(imgTemp, g, bigp2, spis.getDrawPoints(lt));
+            //g.DrawLine(bigp, 0, 200, 640, 200);//在画板上画直线,开始标识
+            //g.DrawLine(p, 10, 20, 20, 20);//在画板上画直线,起始坐标为(10,10),终点坐标为(100,100)
+            //g.DrawLine(p, 10, 30, 20, 30);//在画板上画直线,起始坐标为(10,10),终点坐标为(100,100)
+            //g.DrawLine(p, 10, 40, 20, 40);//在画板上画直线,起始坐标为(10,10),终点坐标为(100,100)
+            //g.DrawLine(p, 10, 50, 20, 50);//在画板上画直线,起始坐标为(10,10),终点坐标为(100,100)
+            //g.DrawRectangle(p1, 0, 0, 575, 799);//在画板上画矩形,起始坐标为(10,10),宽为,高为
+            //g.DrawEllipse(p, 10, 10, 100, 100);//在画板上画椭圆,起始坐标为(10,10),外接矩形的宽为,高为
+            //Bitmap imgTemp001 = (Bitmap)Image.FromFile("C:\\Users\\zlpng\\Desktop\\testprint02.bmp");
+
+            //imgTemp.Save("C:\\Users\\zlpng\\Desktop\\testprint02.bmp");
+            //Image imgTemp2 = new Bitmap(576, 800, PixelFormat.Format1bppIndexed);
+
+            return FaqCopyTo1bpp(imgTemp);
+        }
+
+        /// <summary>
+        /// 通过彩票对象取得对应的票面结构字典的key值
+        /// </summary>
+        /// <param name="lt"></param>
+        /// <returns></returns>
+        private static string getSPIKey(lottery_ticket lt)
+        {
+            if (lt.play_type.Contains("-"))//竞彩
+            {
+                String[] p = lt.play_type.Split('-');
+                int m = 3;
+                int.TryParse(p[1].Replace("null", "1c1").Split('c')[0], out m);
+                if (lt.license_id == 9)
+                {         
+                    return lt.license_id + "_" + (p[0].Equals("2") ? "6" : p[0]) + "_" + (m <= 3 ? 3 : (m <= 6 ? 6 : 8));
+                }
+                else
+                {
+                    return lt.license_id + "_" + p[0] + "_" + (m <= 3 ? 3 : (m <= 6 ? 6 : 8));
+                }
+                
+            }
+            else
+            {
+                if (lt.license_id == 5 || lt.license_id == 6)
+                {
+                    return "5_6_1";
+                }
+                return lt.license_id + "_" + lt.play_type;
+            }
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// 绘制投注内容的点
+        /// </summary>
+        /// <param name="imgTemp"></param>
+        /// <param name="g"></param>
+        /// <param name="smallp"></param>
+        /// <param name="list"></param>
+        private static void drawBetContent(Bitmap imgTemp, Graphics g, Pen smallp, List<Point> list)
+        {
+            foreach (Point item in list)
+            {
+                g.DrawLine(smallp, item.X, item.Y,item.X + SPImageGlobal.BB_WIDTH-2, item.Y);
+            }
+        }
+
+        /// <summary>
+        /// 绘制一张空白图——现在暂时以竞彩篮球大小分3关为例、以后是要传入彩票对象来绘制
+        /// </summary>
+        /// <param name="bmp"></param>
+        /// <param name="g"></param>
+        /// <param name="bigp"></param>
+        /// <param name="smallp"></param>
+        private static void creatBlankScanPortImage(Bitmap bmp, Graphics g, Pen bigp, Pen smallp, SPImageStructure spis)
+        {
+            String[] playCode = spis.getPTypeHeadDesc();
+            //第一步：开始标识、左边黑线、结束标识
+            g.DrawLine(bigp, SPImageGlobal.START_POINT_X, SPImageGlobal.START_POINT_Y,
+                SPImageGlobal.START_POINT_X + SPImageGlobal.BB_WIDTH, SPImageGlobal.START_POINT_Y);
+            for (int i = 1; i <= spis.getStructureHigh()/SPImageGlobal.BB_HIGH; i++)
+            {
+                g.DrawLine(bigp, SPImageGlobal.START_POINT_X, SPImageGlobal.START_POINT_Y + i * SPImageGlobal.BB_HIGH,
+                 SPImageGlobal.START_POINT_X + SPImageGlobal.BB_WIDTH, SPImageGlobal.START_POINT_Y + i * SPImageGlobal.BB_HIGH); 
+            }
+            g.DrawLine(bigp, 640 - SPImageGlobal.BB_WIDTH,
+                SPImageGlobal.START_POINT_Y+spis.getStructureHigh() + SPImageGlobal.BIG_BB_HIGH, 640,
+                SPImageGlobal.START_POINT_Y + spis.getStructureHigh() + SPImageGlobal.BIG_BB_HIGH);
+            //第二步：绘制玩法
+            for (int i = 0; i < playCode.Length; i++)
+            {
+                for (int j = 0; j < playCode[i].Length; j++)
+                {
+                    if (playCode[i][j] == '1')
+                    {
+                        g.DrawLine(smallp, SPImageGlobal.LEFT_SMALL_BB_X + j * (SPImageGlobal.S2S_WIDTH + SPImageGlobal.BB_WIDTH),
+                            SPImageGlobal.START_POINT_Y + (int)((i + 0.5) * SPImageGlobal.BB_HIGH),
+                        SPImageGlobal.LEFT_SMALL_BB_X + j * (SPImageGlobal.S2S_WIDTH + SPImageGlobal.BB_WIDTH) + SPImageGlobal.BB_WIDTH,
+                        SPImageGlobal.START_POINT_Y + (int)((i + 0.5) * SPImageGlobal.BB_HIGH));
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 把图片转换成1位深度的黑白图
+        /// </summary>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        private static System.Drawing.Bitmap FaqCopyTo1bpp(System.Drawing.Bitmap b)
+        {
+            int w = b.Width, h = b.Height;
+            System.Drawing.Rectangle r = new System.Drawing.Rectangle(0, 0, w, h);
+            if (b.PixelFormat != System.Drawing.Imaging.PixelFormat.Format32bppPArgb)
+            {
+                System.Drawing.Bitmap temp = new System.Drawing.Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(temp);
+                g.DrawImage(b, r, 0, 0, w, h, System.Drawing.GraphicsUnit.Pixel);
+                g.Dispose();
+                b = temp;
+            }
+            System.Drawing.Imaging.BitmapData bdat = b.LockBits(r, System.Drawing.Imaging.ImageLockMode.ReadOnly, b.PixelFormat);
+            System.Drawing.Bitmap b0 = new System.Drawing.Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
+            System.Drawing.Imaging.BitmapData b0dat = b0.LockBits(r, System.Drawing.Imaging.ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    int index = y * bdat.Stride + (x * 4);
+                    if (System.Drawing.Color.FromArgb(System.Runtime.InteropServices.Marshal.ReadByte(bdat.Scan0, index + 2), System.Runtime.InteropServices.Marshal.ReadByte(bdat.Scan0, index + 1), System.Runtime.InteropServices.Marshal.ReadByte(bdat.Scan0, index)).GetBrightness() > 0.5f)
+                    {
+                        int index0 = y * b0dat.Stride + (x >> 3);
+                        byte p = System.Runtime.InteropServices.Marshal.ReadByte(b0dat.Scan0, index0);
+                        byte mask = (byte)(0x80 >> (x & 0x7));
+                        System.Runtime.InteropServices.Marshal.WriteByte(b0dat.Scan0, index0, (byte)(p | mask));
+                    }
+                }
+            }
+            b0.UnlockBits(b0dat);
+            b.UnlockBits(bdat);
+            return b0;
+        }
+    }
+}

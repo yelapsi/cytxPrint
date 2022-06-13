@@ -1,0 +1,48 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Text;
+
+namespace Maticsoft.BLL.ScanPortImage.imageStructure.imageDataBlock
+{
+    public class SSQ_DataBlock : ImageDataBlock
+    {
+        /// <summary>
+        /// （双色球蓝色球）数据块的起始位置
+        /// </summary>
+        protected Point startPointB;
+
+        public static int DATA_BLOCK_HIGH = 15 * SPImageGlobal.BB_HIGH;
+
+        public SSQ_DataBlock(int startx, int starty, int startBx, int startBy)
+        {
+            this.startPoint = new System.Drawing.Point(startx, starty);//红球
+            this.startPointB = new System.Drawing.Point(startBx, startBy);//蓝球
+        }
+        public override void getPointArrayByData(List<System.Drawing.Point> pointlist, string data)
+        {
+            string red = data.Split('+')[0];
+            string blue = data.Split('+')[1];
+
+            ////红球
+            //string[] redNums = red.Split(',');
+            //for (int i = 0; i < redNums.Length; i++)
+            //{
+            //    int a = int.Parse(redNums[i]) / 6;
+            //    int b = int.Parse(redNums[i]) % 6;
+
+            //    pointlist.Add(new Point(this.startPoint.X - a * SPImageGlobal.S2S_WIDTH, this.startPoint.Y + (1 + b) * SPImageGlobal.BB_HIGH + SPImageGlobal.B2S_HIGH));
+            //}
+
+            //蓝球
+            string[] blueNums = blue.Split(',');
+            for (int i = 0; i < blueNums.Length; i++)
+            {
+                int a = int.Parse(blueNums[i]) / 6;
+                int b = int.Parse(blueNums[i]) % 6;
+
+                pointlist.Add(new Point(this.startPointB.X - a * SPImageGlobal.S2S_WIDTH, this.startPointB.Y + (1 + b) * SPImageGlobal.BB_HIGH + SPImageGlobal.B2S_HIGH));
+            }
+        }
+    }
+}

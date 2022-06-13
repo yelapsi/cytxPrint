@@ -1,0 +1,37 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Maticsoft.Common.model
+{
+    public class ReservedFields
+    {
+        private string key = "";//保留字段的名称
+        private string value = "";//保留字段的值
+        private string type = "";//保留字段的数据类型描述
+        private string description = "";//保留字段用途描述
+
+        public string Key
+        {
+            get { return key; }
+            set { key = value; }
+        }
+        public string Value
+        {
+            get { return this.value; }
+            set { this.value = value; }
+        }
+
+        public string Type
+        {
+            get { return type; }
+            set { type = value; }
+        }
+
+        public string Description
+        {
+            get { return description; }
+            set { description = value; }
+        }
+    }
+}

@@ -1,0 +1,299 @@
+﻿using System;
+using System.Text.RegularExpressions;
+using System.Windows.Forms;
+using Maticsoft.Common;
+using Maticsoft.Common.model;
+using Maticsoft.Common.Util;
+using Maticsoft.Controller;
+using Maticsoft.BLL.log;
+
+namespace Demo
+{
+    public partial class UnitMyConfig : UserControl
+    {
+        private SystemSettingsController scontroller = new SystemSettingsController();
+        public UnitMyConfig()
+        {
+            InitializeComponent();
+        }
+
+        private void UnitMyConfig_Load(object sender, EventArgs e)
+        {
+            //sys_config sc = scontroller.getSysConfig();
+            this.serverURLtBox.Text = Global.sysconfig.server_url;
+            this.chIsAutoFeedback.CheckState = Global.sysconfig.is_auto_feedback == GlobalConstants.TrueFalseSign.TRUE ? CheckState.Checked : CheckState.Unchecked;
+            this.chIsAutoUpgrade.CheckState = Global.sysconfig.is_auto_upgrade == GlobalConstants.TrueFalseSign.TRUE ? CheckState.Checked : CheckState.Unchecked;
+            this.JLIsNoAutoFeedback.CheckState = Global.sysconfig.soft_update_date.Equals("1") ? CheckState.Checked : CheckState.Unchecked;
+
+            //为数据保存时间和处理方式初始化和赋值
+            foreach (String item in GlobalConstants.DataKeepTimeDic.Keys)
+            {
+                this.cBoxDataKeepTime.Items.Add(new ComboboxItem(item,GlobalConstants.DataKeepTimeDic[item]));
+            }
+            this.cBoxDataKeepTime.Text = GlobalConstants.DataKeepTimeDic[Global.sysconfig.data_keep_time.ToString()];
+
+            foreach (var kv in GlobalConstants.machineModelDictionary)
+            {
+                ComboboxItem cb = new ComboboxItem(kv.Key,kv.Value);
+                this.comBoxPrinterModel.Items.Add(cb);
+            }
+            this.comBoxPrinterModel.Text = GlobalConstants.machineModelDictionary[Global.printermodel];
+        }
+
+
+        /// <summary>
+        /// 修改系统设置
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnOk_Click(object sender, EventArgs e)
+        {
+            sys_config sc = new sys_config();
+            sc.is_auto_feedback = this.chIsAutoFeedback.CheckState == CheckState.Checked ? 1 : 0;
+            sc.is_auto_upgrade = this.chIsAutoUpgrade.CheckState == CheckState.Checked ? 1 : 0;
+            sc.soft_update_date = this.JLIsNoAutoFeedback.CheckState == CheckState.Checked ? "1" : "0";
+
+            sc.data_keep_time = Int64.Parse(((ComboboxItem)this.cBoxDataKeepTime.SelectedItem).Key.ToString());
+            
+            try
+            {
+                MsgBox.MsgDialogResult result = MsgBox.getInstance().Show("是否确定要进行修改?", "提示", MsgBox.MyButtons.OKCancel);
+                if (result == MsgBox.MsgDialogResult.OK)
+                {
+                    if (scontroller.updateSysConfig(sc))
+                    {
+                        LogUtil.getInstance().addLogDataToQueue("修改系统参数成功!", GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                        Global.sysconfig = scontroller.getSysConfig();
+                        MsgBox.getInstance().Show("修改系统参数成功!", "提示", MsgBox.MyButtons.OK);            
+                    }
+                    else
+                    {
+                        LogUtil.getInstance().addLogDataToQueue("修改系统参数失败!", GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                        MsgBox.getInstance().Show("修改系统设置错误!", "提示", MsgBox.MyButtons.OK);
+                    }
+                }             
+
+            }
+            catch (Exception ex)
+            {
+                LogUtil.getInstance().addLogDataToQueue("修改系统参数异常!", GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                LogUtil.getInstance().addLogDataToQueue("修改系统参数异常!"+ ex.Message, GlobalConstants.LOGTYPE_ENUM.EXCEOTION);
+                MsgBox.getInstance().Show(ex.Message, "提示", MsgBox.MyButtons.OK);
+            }
+        }
+
+        /// <summary>
+        /// 修改打印机型号设置
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnChoosePrinterModel_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                ComboboxItem cb = (ComboboxItem)this.comBoxPrinterModel.SelectedItem;
+                ReservedFieldsController reservedFieldsController = new ReservedFieldsController();
+
+                MsgBox.MsgDialogResult result = MsgBox.getInstance().Show("是否确定要进行修改?", "提示", MsgBox.MyButtons.OKCancel);
+                if (result == MsgBox.MsgDialogResult.OK)
+                {
+                    if (reservedFieldsController.updateReservedFields(GlobalConstants.ReservedFieldKeys.printermodel, cb.Key.ToString()) > 0)
+                    {
+                        LogUtil.getInstance().addLogDataToQueue("修改系统参数成功!", GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                        Global.printermodel = cb.Key.ToString();
+                        MsgBox.getInstance().Show("修改系统参数成功!", "提示", MsgBox.MyButtons.OK);
+                    }
+                    else
+                    {
+                        LogUtil.getInstance().addLogDataToQueue("修改系统参数失败!", GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                        MsgBox.getInstance().Show("修改系统设置错误!", "提示", MsgBox.MyButtons.OK);
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                LogUtil.getInstance().addLogDataToQueue("修改系统参数异常!", GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                LogUtil.getInstance().addLogDataToQueue("修改系统参数异常!" + ex.Message, GlobalConstants.LOGTYPE_ENUM.EXCEOTION);
+                MsgBox.getInstance().Show(ex.Message, "提示", MsgBox.MyButtons.OK);
+            }
+        }
+
+        /// <summary>
+        /// 修改系统密码
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void updatePassbtn_Click(object sender, EventArgs e)
+        {
+            String oldpass = this.oldPasstextBox.Text.Trim();
+            if (String.IsNullOrEmpty(oldpass))
+            {
+                MsgBox.getInstance().Show("旧密码不能为空!", "提示", MsgBox.MyButtons.OK);
+                this.oldPasstextBox.Focus();
+                return;
+            }
+
+            Regex reg = new Regex("^[0-9]+$"); //判断是不是数据
+            Match ma = reg.Match(oldpass);
+            if (!ma.Success)
+            {
+                //不是数字时的操作
+                MsgBox.getInstance().Show("密码只能是数字!", "提示", MsgBox.MyButtons.OK);
+                this.oldPasstextBox.Focus();
+                return;
+            }
+
+            String newpass = this.newPasstextBox.Text.Trim();
+            if (String.IsNullOrEmpty(newpass))
+            {
+                MsgBox.getInstance().Show("新密码不能为空!", "提示", MsgBox.MyButtons.OK);
+                this.newPasstextBox.Focus();
+                return;
+            }
+
+            ma = reg.Match(newpass);
+            if (!ma.Success)
+            {
+                //不是数字时的操作
+                MsgBox.getInstance().Show("密码只能是数字!", "提示", MsgBox.MyButtons.OK);
+                this.newPasstextBox.Focus();
+                return;
+            }
+
+            String surepass = this.sureNewPasstextBox.Text.Trim();
+            if (!newpass.Equals(surepass))
+            {
+                MsgBox.getInstance().Show("两次输入密码不一致!", "提示", MsgBox.MyButtons.OK);
+                this.sureNewPasstextBox.Focus();
+                return;
+            }
+
+            //修改操作
+            try
+            {
+                MsgBox.MsgDialogResult result = MsgBox.getInstance().Show("是否确定要进行修改?", "提示", MsgBox.MyButtons.OKCancel);
+                if (result == MsgBox.MsgDialogResult.OK)
+                {
+                    if (scontroller.updateSysConfigPass(oldpass, newpass))
+                    {
+                        this.oldPasstextBox.Text = "";
+                        this.newPasstextBox.Text = "";
+                        this.sureNewPasstextBox.Text = "";
+                        LogUtil.getInstance().addLogDataToQueue("修改系统操作密码成功!", GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                        MsgBox.getInstance().Show("密码修改成功!", "提示", MsgBox.MyButtons.OK);
+                        Global.sysconfig.sys_pass = newpass;
+                    }
+                    else
+                    {
+                        LogUtil.getInstance().addLogDataToQueue("修改系统操作密码失败!", GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                        MsgBox.getInstance().Show("密码修改失败!", "提示", MsgBox.MyButtons.OK);
+                    }
+                }       
+            }
+            catch (Exception ce)
+            {
+                LogUtil.getInstance().addLogDataToQueue("修改系统操作密码异常!", GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                LogUtil.getInstance().addLogDataToQueue("修改系统操作密码异常!"+ ce.Message, GlobalConstants.LOGTYPE_ENUM.EXCEOTION);
+                MsgBox.getInstance().Show(ce.Message, "提示", MsgBox.MyButtons.OK);
+            }
+        }
+        bool lockUrl = false;
+
+        public bool LockUrl
+        {
+            get { return lockUrl; }
+            set
+            {
+                lockUrl = value;
+                if (lockUrl)
+                {
+                    this.lockbtn.BackgroundImage = global::Demo.Properties.Resources.unlock;
+                    this.serverURLtBox.ReadOnly = false;
+                }
+                else
+                {
+                    this.lockbtn.BackgroundImage = global::Demo.Properties.Resources._lock;
+                    this.serverURLtBox.ReadOnly = true;
+                }
+            }
+        }
+        /// <summary>
+        /// 解锁，让可修改
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void lockbtn_Click(object sender, EventArgs e)
+        {
+            if (!this.serverURLtBox.Enabled)
+            {
+                FrmPassEnter frm = new FrmPassEnter();
+                DialogResult result = frm.ShowDialog();
+                if (result == DialogResult.Cancel)
+                {
+                    return;
+                }
+                else if (result == DialogResult.No)
+                {
+                    MsgBox.getInstance().Show(String.Format("密码错误", ""), "错误", MsgBox.MyButtons.OK);
+                    return;
+                }
+            } 
+
+            this.serverURLtBox.Enabled = !this.serverURLtBox.Enabled;
+            this.LockUrl = !this.LockUrl;
+        }
+
+        private void btnUpdateURL_Click(object sender, EventArgs e)
+        {
+            if (!this.serverURLtBox.Enabled)
+            {
+                return;
+            }
+            String url = this.serverURLtBox.Text.Trim();
+            if (String.IsNullOrEmpty(url))
+            {
+                MsgBox.getInstance().Show("服务器地址不能为空!", "提示", MsgBox.MyButtons.OK);
+                this.oldPasstextBox.Focus();
+                return;
+            }
+
+            try
+            {
+                MsgBox.MsgDialogResult result = MsgBox.getInstance().Show("是否确定要进行修改?", "提示", MsgBox.MyButtons.OKCancel);
+                if (result == MsgBox.MsgDialogResult.OK)
+                {
+                    if (scontroller.updateServerURL(url))
+                    {
+                        LogUtil.getInstance().addLogDataToQueue("修改服务器地址成功!", GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                        Global.sysconfig.server_url = url;
+                        MsgBox.getInstance().Show("修改服务器地址成功!", "提示", MsgBox.MyButtons.OK);
+
+                    }
+                    else
+                    {
+                        LogUtil.getInstance().addLogDataToQueue("修改服务器地址失败!", GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                        MsgBox.getInstance().Show("修改服务器地址错误!", "提示", MsgBox.MyButtons.OK);
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                LogUtil.getInstance().addLogDataToQueue("修改服务器地址异常!", GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                LogUtil.getInstance().addLogDataToQueue("修改服务器地址异常!" + ex.Message, GlobalConstants.LOGTYPE_ENUM.EXCEOTION);
+                MsgBox.getInstance().Show(ex.Message, "提示", MsgBox.MyButtons.OK);
+            }
+        }
+
+        private void btn_MouseEnter(object sender, EventArgs e)
+        {
+            ((Control)sender).BackgroundImage = global::Demo.Properties.Resources.btnSaveModificationEnter; 
+        }
+
+        private void btn_MouseLeave(object sender, EventArgs e)
+        {
+            ((Control)sender).BackgroundImage = global::Demo.Properties.Resources.btnSaveModification; 
+        }
+    }
+}

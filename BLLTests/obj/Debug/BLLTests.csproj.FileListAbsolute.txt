@@ -1,0 +1,13 @@
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\obj\Debug\BLLTests.csprojResolveAssemblyReference.cache
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\bin\Debug\BLLTests.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\bin\Debug\BLLTests.pdb
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\bin\Debug\Maticsoft.BLL.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\bin\Debug\Maticsoft.Common.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\bin\Debug\System.Data.SQLite.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\bin\Debug\log4net.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\bin\Debug\OpenSmtp.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\bin\Debug\Maticsoft.BLL.pdb
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\bin\Debug\Maticsoft.Common.pdb
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\obj\Debug\BLLTests.dll
+C:\Users\Administrator.DESKTOP-HRGAJ2C\Desktop\cytxPrint\BLLTests\obj\Debug\BLLTests.pdb

@@ -1,0 +1,102 @@
+﻿using Maticsoft.BLL.ScanPortImage.imageStructure.imageDataBlock;
+using Maticsoft.Common.Util;
+using Maticsoft.Common.Util.playType;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Text;
+
+namespace Maticsoft.BLL.ScanPortImage.imageStructure
+{
+    public class SSQStructure : SPImageStructure
+    {
+        public SSQStructure(String lNameStr)
+        {
+            this.SLIP_EVENT_NUMBER = 3;
+            this.ISHAS_CLEARANCE_TYPE = false;
+            this.PTYPE_HEAD_DESC = SPImageGlobal.PTYPE_HEAD_DESC_DICTIONARY[lNameStr];
+            this.HIGHLY_EFFECTIVE_CONTENT = 1800;//2500;//18 * SPImageGlobal.BB_HIGH;
+
+            //for (int i = 0; i < 5; i++)
+            //{
+            //双色球 红色球数据块起始坐标 蓝色球数据块起始坐标
+            //this.DATA_BLOCK_LIST.Add(new SSQ_DataBlock(
+            //    SPImageGlobal.LEFT_SMALL_BB_X + (2 - i) * SPImageGlobal.RACE_BLOCK_WIDTH + 100 - 23
+            //    , SPImageGlobal.START_POINT_Y + 221
+            //    , 100 + 102
+            //    , SPImageGlobal.START_POINT_Y + 221
+            //    ));
+            //}
+            this.DATA_BLOCK_LIST.Add(new SSQ_DataBlock(
+                SPImageGlobal.LEFT_SMALL_BB_X + 2 * SPImageGlobal.RACE_BLOCK_WIDTH + 100 - 23
+                , SPImageGlobal.START_POINT_Y + 223
+                , 100 + 102
+                , SPImageGlobal.START_POINT_Y + 223
+                ));
+            //倍数块
+            this.DATA_BLOCK_LIST.Add(new MultipleDataBlock(SPImageGlobal.LEFT_SMALL_BB_X, SPImageGlobal.START_POINT_Y + 17 * SPImageGlobal.BB_HIGH));
+        }
+
+        public override List<System.Drawing.Point> getDrawPoints(Common.model.lottery_ticket lt)
+        {
+            List<Point> points = new List<Point>();
+
+
+
+            //彩种
+            //points.Add(new Point(SPImageGlobal.LEFT_SMALL_BB_X + (lt.license_id == LicenseContants.License.GAMEIDRXJ ? 11 : 10) * SPImageGlobal.S2S_WIDTH,SPImageGlobal.START_POINT_Y + SPImageGlobal.BB_HIGH + SPImageGlobal.B2S_HIGH));
+            String betCode = lt.bet_code.Replace(" ", "");
+            //int m = 1, p = 0;
+            //int.TryParse(lt.multiple, out m);
+            //int.TryParse(lt.bet_price, out p);
+
+            //if (lt.play_type.Equals(SSQPlayType.FS.ToString()))//复式
+            //{
+            //    //points.Add(new Point(SPImageGlobal.LEFT_SMALL_BB_X,
+            //    //                SPImageGlobal.START_POINT_Y + 5 * SPImageGlobal.BB_HIGH + SPImageGlobal.B2S_HIGH));
+
+            //    //this.DATA_BLOCK_LIST[2].getPointArrayByData(points, codes[0]);
+            //    //this.DATA_BLOCK_LIST[3].getPointArrayByData(points, lt.license_id.ToString() + "-" + lt.multiple);
+            //}
+            //else
+            //{
+            //    //for (int i = 0; i < this.DATA_BLOCK_LIST.Count; i++)
+            //    //{
+            //    //    if (i < this.SLIP_EVENT_NUMBER)
+            //    //    {
+            //    //        if (i < codes.Length)
+            //    //        {
+            //    //            this.DATA_BLOCK_LIST[i].getPointArrayByData(points, codes[i]);
+            //    //        }
+            //    //    }
+            //    //    else if (i == this.DATA_BLOCK_LIST.Count - 1)//倍数
+            //    //    {
+            //    //        this.DATA_BLOCK_LIST[i].getPointArrayByData(points, lt.license_id.ToString() + "-" + lt.multiple);
+            //    //    }
+            //    //}
+
+
+            //    //for (int i = 0; i < codes.Length; i++)
+            //    //{
+            try
+            {
+                this.DATA_BLOCK_LIST[0].getPointArrayByData(points, betCode);
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                this.DATA_BLOCK_LIST[1].getPointArrayByData(points, lt.license_id.ToString() + "-" + lt.multiple);
+            }
+            catch
+            {
+            }
+                    
+            //    //}
+            //}
+            return points;
+        }
+    }
+}

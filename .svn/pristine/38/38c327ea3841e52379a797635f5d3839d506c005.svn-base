@@ -1,0 +1,87 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Text;
+using System.Windows.Forms;
+using Maticsoft.Controller;
+using Maticsoft.Common;
+
+namespace Demo
+{
+    public partial class ItemAudio : UserControl
+    {
+        private string audioFileFullName;
+
+        bool selected = false;
+
+        public bool Selected
+        {
+            get { return selected; }
+            set
+            {
+                selected = value;
+                if (selected)
+                {
+                    this.btnSaveAudio.BackgroundImage = global::Demo.Properties.Resources.btnSelected;
+                    this.btnSaveAudio.Enabled = false;
+                }
+                else
+                {
+                    this.btnSaveAudio.BackgroundImage = global::Demo.Properties.Resources.btnSave;
+                    this.btnSaveAudio.Enabled = true;
+                }
+            }
+        }
+
+        public ItemAudio()
+        {
+            InitializeComponent();
+        }
+
+        public System.Windows.Forms.RadioButton RadioButton
+        {
+            get { return radioButton; }
+        }
+
+        //private void btnSaveAudio_Click(object sender, EventArgs e)
+        //{
+        //    if (new SystemSettingsController().updateAudioFileFullname(this.AudioFileFullName))
+        //    {
+        //        Global.sysconfig.audio_file_fullname = this.AudioFileFullName;
+        //        ((Button)sender).Text = "选中";
+        //        ((Button)sender).Enabled = false;
+        //    }
+        //}
+
+        public string AudioFileFullName
+        {
+            get { return audioFileFullName; }
+            set { audioFileFullName = value; }
+        }
+
+        public Button BtnSave
+        {
+            get { return this.btnSaveAudio; }
+        }
+
+        private void btnSaveAudio_MouseEnter(object sender, EventArgs e)
+        {
+            this.btnSaveAudio.BackgroundImage = global::Demo.Properties.Resources.btnSaveEnter;
+        }
+
+        private void btnSaveAudio_MouseLeave(object sender, EventArgs e)
+        {
+            this.btnSaveAudio.BackgroundImage = global::Demo.Properties.Resources.btnSave;
+        }
+
+        private void radioButton_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!this.radioButton.Checked && !this.Selected)
+            {
+                this.BtnSave.Visible = false;
+            }
+        }
+    }
+}

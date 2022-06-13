@@ -1,0 +1,238 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{38D7AA58-C95B-449B-86C6-A8073A56E11F}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>Maticsoft.BLL</AssemblyName>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Maticsoft.BLL</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <SccProjectName>Svn</SccProjectName>
+    <SccLocalPath>Svn</SccLocalPath>
+    <SccAuxPath>Svn</SccAuxPath>
+    <SccProvider>SubversionScc</SccProvider>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>..\bin\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>..\bin\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>false</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>true</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>none</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+    <Reference Include="System.Data">
+      <Name>System.Data</Name>
+    </Reference>
+    <Reference Include="System.Data.SQLite">
+      <HintPath>..\Lib\System.Data.SQLite.DLL</HintPath>
+    </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml">
+      <Name>System.XML</Name>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="cmdResolve\CmdResovleUtil.cs" />
+    <Compile Include="comparison\ComparisonUtil.cs" />
+    <Compile Include="dataResolve\SD11x5DataResolve.cs" />
+    <Compile Include="dataResolve\BQCDataResolve.cs" />
+    <Compile Include="dataResolve\DataResolveFactory.cs" />
+    <Compile Include="dataResolve\DLTDataResolve.cs" />
+    <Compile Include="dataResolve\F3DDataResolve.cs" />
+    <Compile Include="dataResolve\IDataResolve.cs" />
+    <Compile Include="dataResolve\JCLQDataResolve.cs" />
+    <Compile Include="dataResolve\JCZQDataResolve.cs" />
+    <Compile Include="dataResolve\JQCDataResolve.cs" />
+    <Compile Include="dataResolve\PL3DataResolve.cs" />
+    <Compile Include="dataResolve\PL5DataResolve.cs" />
+    <Compile Include="dataResolve\QLCDataResolve.cs" />
+    <Compile Include="dataResolve\QXCDataResolve.cs" />
+    <Compile Include="dataResolve\RX9DataResolve.cs" />
+    <Compile Include="dataResolve\SFCDataResolve.cs" />
+    <Compile Include="dataResolve\SSQDataResolve.cs" />
+    <Compile Include="log\LogUtil.cs" />
+    <Compile Include="log\PrintTraceListener.cs" />
+    <Compile Include="proController\BaseProController.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\DLT_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\GGFSDataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\GGLXDataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\ImageDataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\JL_DXF_SF_RFSF_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\JL_HH3G_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\JL_HH6G8G_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\JL_SFC_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\JZ_BF_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\JZ_BQC_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\JZ_HH3G_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\JZ_HH6G_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\JZ_HH8G_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\JZ_SPF_RQSPF_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\JZ_ZJQ_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\LCBQC_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\MultipleDataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\PL3_PL5_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\QXC_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\R9_14C_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\imageDataBlock\SCJQ_DataBlock.cs" />
+    <Compile Include="ScanPortImage\imageStructure\JCStructure.cs" />
+    <Compile Include="ScanPortImage\imageStructure\LCBQCStructure.cs" />
+    <Compile Include="ScanPortImage\imageStructure\QXCStructure.cs" />
+    <Compile Include="ScanPortImage\imageStructure\R914CSstructure.cs" />
+    <Compile Include="ScanPortImage\imageStructure\SCJQStructure.cs" />
+    <Compile Include="ScanPortImage\imageStructure\SPImageStructure.cs" />
+    <Compile Include="ScanPortImage\PL5Structure.cs" />
+    <Compile Include="ScanPortImage\ScanPortImageUtil.cs" />
+    <Compile Include="ScanPortImage\SPImageGlobal.cs" />
+    <Compile Include="serviceimpl\AutoTaskServiceImpl.cs" />
+    <Compile Include="serviceimpl\BaseServiceImpl.cs" />
+    <Compile Include="serviceimpl\ErrorTicketServiceImpl.cs" />
+    <Compile Include="serviceimpl\ExpiredCheckingServiceImpl.cs" />
+    <Compile Include="serviceimpl\FeedbackServiceImpl.cs" />
+    <Compile Include="serviceimpl\LicenseServiceImpl.cs" />
+    <Compile Include="serviceimpl\LoginServiceImpl.cs" />
+    <Compile Include="serviceimpl\LogServiceImpl.cs" />
+    <Compile Include="serviceimpl\ManualProcServiceImpl.cs" />
+    <Compile Include="serviceimpl\PrintTicketServiceImpl.cs" />
+    <Compile Include="serviceimpl\RecordServiceImpl.cs" />
+    <Compile Include="serviceimpl\RequestTicketServiceImpl.cs" />
+    <Compile Include="serviceimpl\ReservedFieldsImpl.cs" />
+    <Compile Include="serviceimpl\SystemSettingsServiceImpl.cs" />
+    <Compile Include="serviceinterface\IAutoTaskService.cs" />
+    <Compile Include="serviceinterface\IBaseService.cs" />
+    <Compile Include="serviceinterface\IErrorTicketService.cs" />
+    <Compile Include="serviceinterface\IExpiredCheckingService.cs" />
+    <Compile Include="serviceinterface\IFeedbackService.cs" />
+    <Compile Include="serviceinterface\ILicenseService.cs" />
+    <Compile Include="serviceinterface\ILoginService.cs" />
+    <Compile Include="serviceinterface\ILogService.cs" />
+    <Compile Include="serviceinterface\IManualProcService.cs" />
+    <Compile Include="serviceinterface\IPrintTicketService.cs" />
+    <Compile Include="serviceinterface\IRequestTicketService.cs" />
+    <Compile Include="serviceinterface\ISynchronizationService.cs" />
+    <Compile Include="serviceinterface\ISystemSettingsService.cs" />
+    <Compile Include="serviceinterface\IRecordService.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Project>{E3D8759A-C5EB-402D-9F10-F5C6029A8D1A}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>

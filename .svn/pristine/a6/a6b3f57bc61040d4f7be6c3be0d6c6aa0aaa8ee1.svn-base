@@ -1,0 +1,57 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Maticsoft.Controller
+{
+    public class ReservedFieldsController
+    {
+        Maticsoft.BLL.serviceimpl.ReservedFieldsImpl reservedFieldsImpl = new BLL.serviceimpl.ReservedFieldsImpl();
+
+        /// <summary>
+        /// 获取保留字段列表，如果表不存在，则建立新表。
+        /// </summary>
+        /// <returns></returns>
+        public Maticsoft.Common.model.reserved_fields getReservedFields(string columnName)
+        {
+            try
+            {
+                return reservedFieldsImpl.getReservedFields(columnName);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 添加一个保留字段列，如果表不存在，则建立新表。
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public int addReservedFields(string key, string value, Maticsoft.Common.ReservedFieldsHelper.ReservedFieldsType type, string description)
+        {
+            try
+            {
+                return reservedFieldsImpl.addReservedFields(key, value, type, description);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public int updateReservedFields(string key, string value)
+        {
+            try
+            {
+                return reservedFieldsImpl.updateReservedFields(key, value);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+    }
+}

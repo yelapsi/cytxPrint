@@ -1,0 +1,173 @@
+﻿using Maticsoft.BLL.log;
+using Maticsoft.Common;
+using Maticsoft.Common.model;
+using Maticsoft.Common.Util;
+using Maticsoft.Controller;
+using System;
+using System.Diagnostics;
+using System.Drawing;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Windows.Forms;
+
+namespace Demo
+{
+    public partial class Login : Form
+    {
+        private readonly LoginController loginController = new LoginController();
+        //初始化系统配置
+        SystemSettingsController con = new SystemSettingsController();
+        public Login()
+        {
+            InitializeComponent();
+        }
+
+        private void btnLogin_Click(object sender, EventArgs e)
+        {
+            if (String.IsNullOrEmpty(this.txtUserName.Text))
+            {
+                MsgBox.getInstance().Show("请输入用户名。");
+                return;
+            }
+            else if (String.IsNullOrEmpty(this.txtPassword.Text))
+            {
+                MsgBox.getInstance().Show("请输入密码。");
+                return;
+            }
+            else
+            {
+                try
+                {
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(login));
+                }
+                catch (Exception e2)
+                {
+                    //MsgBox.getInstance().Show("登陆时发生异常。");
+                    MsgBox.getInstance().Show(e2.ToString());
+                }
+            }
+        }
+
+        private void login(object o)
+        {
+            if (this.btnLogin.InvokeRequired)
+            {
+                this.btnLogin.Invoke(new EventHandler(delegate(object o2, EventArgs e2)
+                {
+                    try
+                    {
+                        this.btnLogin.Enabled = false;
+                        loginController.LoginRequest(this.txtUserName.Text, this.txtPassword.Text);
+                        this.con.updateLastLoginName(this.txtUserName.Text);
+
+                        //记录日志——登陆成功
+                        LogUtil.getInstance().addLogDataToQueue("登陆成功", Maticsoft.Common.Util.GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                        LogUtil.getInstance().addLogDataToQueue("登陆成功", Maticsoft.Common.Util.GlobalConstants.LOGTYPE_ENUM.SYSTEM_OPERATION);
+                        this.DialogResult = System.Windows.Forms.DialogResult.OK;
+                        this.Close();
+                    }
+                    catch (Exception ce)
+                    {
+                        MsgBox.getInstance().Show(ce.Message.ToString(), "提示", MsgBox.MyButtons.OK);
+                        LogUtil.getInstance().addLogDataToQueue(ce.StackTrace, Maticsoft.Common.Util.GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                        if (this.btnLogin.InvokeRequired)
+                        {
+                            this.btnLogin.Invoke(new EventHandler(delegate(object o3, EventArgs e)
+                            {
+                                this.btnLogin.Enabled = true;
+                            }));
+                        }
+                        else
+                        {
+                            this.btnLogin.Enabled = true;
+                        }
+                    }
+                }));
+            }
+            else
+            {
+                try
+                {
+                    this.btnLogin.Enabled = false;
+                    loginController.LoginRequest(this.txtUserName.Text, this.txtPassword.Text);
+                    this.con.updateLastLoginName(this.txtUserName.Text);
+
+                    this.DialogResult = System.Windows.Forms.DialogResult.OK;
+                    this.Close();
+                }
+                catch (Exception ce)
+                {
+                    MsgBox.getInstance().Show("登陆出现异常!", "提示", MsgBox.MyButtons.OK);
+                    LogUtil.getInstance().addLogDataToQueue(ce.StackTrace, Maticsoft.Common.Util.GlobalConstants.LOGTYPE_ENUM.OWNER_OPERATOR);
+                    if (this.btnLogin.InvokeRequired)
+                    {
+                        this.btnLogin.Invoke(new EventHandler(delegate(object o2, EventArgs e)
+                        {
+                            this.btnLogin.Enabled = true;
+                        }));
+                    }
+                    else
+                    {
+                        this.btnLogin.Enabled = true;
+                    }
+                }
+            }
+
+        }
+
+        private void GetDbConnectionString()
+        {//"data source=&quot;./db/sysdb.db&quot;"
+            GlobalConstants.ConnectionStringBll = string.Format("data source=\"{0}\"",System.Windows.Forms.Application.StartupPath + "\\db\\sysdb.db");
+            GlobalConstants.ConnectionStringLog = string.Format("data source=\"{0}\"", System.Windows.Forms.Application.StartupPath + "\\db\\log4net.db");
+        }
+
+        private void Login_Load(object sender, EventArgs e)
+        {       
+            try
+            {
+                GetDbConnectionString();
+
+                Global.sysconfig = con.getSysConfig();
+                this.txtUserName.Text = Global.sysconfig.last_login_name;
+
+                //从保留字段表里查询"IS_PRINT_SCAN_IMAGE"字段
+                Maticsoft.Common.model.reserved_fields rf = new Maticsoft.Controller.ReservedFieldsController().getReservedFields("IS_PRINT_SCAN_IMAGE");
+                Maticsoft.BLL.ScanPortImage.SPImageGlobal.IS_PRINT_SCAN_IMAGE = rf.value.Equals("1") ? true : false;
+            }
+            catch (Exception ce)
+            {
+                LogUtil.getInstance().addLogDataToQueue("初始化参数异常"+ce.StackTrace, Maticsoft.Common.Util.GlobalConstants.LOGTYPE_ENUM.EXCEOTION);
+            }
+        }
+
+        private void picClose_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void picMinimize_Click(object sender, EventArgs e)
+        {
+            this.WindowState = FormWindowState.Minimized;
+        }
+
+        private void picClose_MouseEnter(object sender, EventArgs e)
+        {
+            ((Control)sender).BackgroundImage = global::Demo.Properties.Resources.btnCloseEnter;
+        }
+
+        private void picClose_MouseLeave(object sender, EventArgs e)
+        {
+            ((Control)sender).BackgroundImage = global::Demo.Properties.Resources.btnClose;
+        }
+
+        private void picMinimize_MouseEnter(object sender, EventArgs e)
+        {
+            ((Control)sender).BackgroundImage = global::Demo.Properties.Resources.btnMinimizeEnter;
+        }
+
+        private void picMinimize_MouseLeave(object sender, EventArgs e)
+        {
+            ((Control)sender).BackgroundImage = global::Demo.Properties.Resources.btnMinimize;
+        }
+    }
+}

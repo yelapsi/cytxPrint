@@ -1,0 +1,46 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Maticsoft.BLL.ScanPortImage
+{
+    class SPImageGlobal
+    {
+        /// <summary>
+        /// //开始标识的起点X坐标
+        /// </summary>
+        public const int START_POINT_X = 10;
+        /// <summary>
+        /// //开始标识的起点Y坐标
+        /// </summary>
+        public const int START_POINT_Y = 50;
+        /// <summary>
+        /// //大黑块的高度
+        /// </summary>
+        public const int BIG_BB_HIGH = 10;
+        /// <summary>
+        /// //小黑块的高度
+        /// </summary>
+        public const int SMALL_BB_HIGH = 8;
+        /// <summary>
+        /// //黑块的宽度——大小黑块的宽度一致
+        /// </summary>
+        public const int BB_WIDTH = 30;
+        /// <summary>
+        /// //两个黑块起点的高度差——是指起点的高度差，不是中间的空白
+        /// </summary>
+        public const int BB_HIGH = 34;
+        /// <summary>
+        /// //最左边的赛事大框的起点的X值
+        /// </summary>
+        public const int LEFT_RACE_START_X = 42;
+        /// <summary>
+        /// //赛事块的宽度
+        /// </summary>
+        public const int RACE_BLOCK_WIDTH = 400;
+        /// <summary>
+        /// //两个小块之间的宽度间隔
+        /// </summary>
+        public const int S2S_WIDTH = 12;
+    }
+}

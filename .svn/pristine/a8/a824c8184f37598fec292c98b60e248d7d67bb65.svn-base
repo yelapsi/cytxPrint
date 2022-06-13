@@ -1,0 +1,109 @@
+﻿using System;
+namespace Maticsoft.Common.model
+{
+	/// <summary>
+	/// sys_config:实体类(属性说明自动提取数据库字段的描述信息)
+	/// </summary>
+	[Serializable]
+	public partial class sys_config
+	{
+		public sys_config()
+		{}
+		#region Model       
+		private string _sys_pass;
+        private string _server_url;
+        private Int64 _data_keep_time;
+        private Int64 _is_auto_feedback;
+        private Int64 _is_auto_upgrade;
+        private Int64 _page_range;
+        private string _sdata_update_date;
+        private string _sdata_version;
+        private string _sdata_version_msg;
+        private string _soft_update_date;
+        private string _soft_version;
+        private string _soft_version_msg;
+        private string _last_login_name;
+        private string _audio_file_fullname;
+
+        public string sdata_version
+        {
+            get { return _sdata_version; }
+            set { _sdata_version = value; }
+        }
+        
+        public string sdata_version_msg
+        {
+            get { return _sdata_version_msg; }
+            set { _sdata_version_msg = value; }
+        }
+        
+        public string soft_update_date
+        {
+            get { return _soft_update_date; }
+            set { _soft_update_date = value; }
+        }
+        
+        public string soft_version
+        {
+            get { return _soft_version; }
+            set { _soft_version = value; }
+        }
+        
+        public string soft_version_msg
+        {
+            get { return _soft_version_msg; }
+            set { _soft_version_msg = value; }
+        }
+
+        public string sdata_update_date
+        {
+            get { return _sdata_update_date; }
+            set { _sdata_update_date = value; }
+        }
+        public string server_url
+        {
+            get { return _server_url; }
+            set { _server_url = value; }
+        }
+        public Int64 data_keep_time
+        {
+            get { return _data_keep_time; }
+            set { _data_keep_time = value; }
+        }
+
+        public Int64 is_auto_upgrade
+        {
+            get { return _is_auto_upgrade; }
+            set { _is_auto_upgrade = value; }
+        }
+		public string sys_pass
+		{
+			set{ _sys_pass=value;}
+			get{return _sys_pass;}
+		}
+        public Int64 is_auto_feedback
+        {
+            set { _is_auto_feedback = value; }
+            get { return _is_auto_feedback; }
+        }
+        public Int64 page_range
+        {
+            get { return _page_range; }
+            set { _page_range = value; }
+        }
+
+        public string last_login_name
+        {
+            get{return _last_login_name; }
+            set{_last_login_name = value;}
+        }
+
+        public string audio_file_fullname
+        {
+            get { return _audio_file_fullname; }
+            set { _audio_file_fullname = value; }
+        }
+        #endregion Model
+    }
+}
+

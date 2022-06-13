@@ -1,0 +1,97 @@
+﻿using Maticsoft.Common.Util;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Text;
+
+namespace Maticsoft.BLL.ScanPortImage
+{
+    public abstract class ImageDataBlock
+    {
+        /// <summary>
+        /// 赛事编号
+        /// </summary>
+        protected int[] raceNO = {1,2,4,5,10,20,40,50,100,200,400,500};
+        /// <summary>
+        /// 倍数编号
+        /// </summary>
+        protected int[] multipleNO = {1,2,3,4,5,6,7,8,9,10,20,30,40,50};
+
+        /// <summary>
+        /// 该数据块的起始位置
+        /// </summary>
+        protected Point startPoint;
+
+        /// <summary>
+        /// 根据传入的数据，得到需要描的几个点的起始坐标
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public abstract void getPointArrayByData(List<Point>pointlist,String data);
+
+        /// <summary>
+        /// 获取倍数的点——适用于竞彩
+        /// </summary>
+        /// <param name="plist"></param>
+        /// <param name="multiple"></param>
+        /// <param name="startPoint"></param>
+        public void getSMGMultiplePoints(List<Point> plist, int multiple, Point startPoint){
+            while (multiple > 0)
+            {
+                for (int i = multipleNO.Length-1; i >= 0; i--)
+                {
+                    if (multipleNO[i] <= multiple)
+                    {
+                        plist.Add(new Point(startPoint.X + (int)((i % 4 + 0.5) * SPImageGlobal.S2S_WIDTH + (i % 4) * SPImageGlobal.BB_WIDTH),
+                startPoint.Y + (int)((Math.Floor(i / 4d) + 1.5) * SPImageGlobal.BB_HIGH) - SPImageGlobal.SMALL_BB_HIGH / 2));
+                        multiple -= multipleNO[i];
+                        break;
+                    }
+                }
+            }
+        }
+        /// <summary>
+        /// 取竞彩赛事的点
+        /// </summary>
+        /// <param name="race"></param>
+        /// <param name="startPoint"></param>
+        /// <returns></returns>
+        public void getSMGRacePoints(List<Point> plist, String race, Point startPoint)
+        {            
+            //第一步：取字符串前8位，算出是周几（20160506）
+            int week = 1;
+            int.TryParse(data2weekDayTranslation(race.Substring(0, 8)),out week);
+            
+            //第二步：取周几的点
+            plist.Add(new Point(startPoint.X + (int)((week % 4 - 0.5) * SPImageGlobal.S2S_WIDTH + (week % 4 - 1) * SPImageGlobal.BB_WIDTH),
+                startPoint.Y + (int)((Math.Ceiling(week/4d)+0.5)*SPImageGlobal.BB_HIGH)-SPImageGlobal.SMALL_BB_HIGH/2));
+            //第三步：取对阵的点
+            int racenum = 301;
+            int.TryParse(race.Substring(8, 3),out racenum);
+            while (racenum>0)
+            {
+                for (int i = raceNO.Length-1; i >= 0; i--)
+                {
+                    if (raceNO[i] <= racenum)
+                    {
+                        plist.Add(new Point(startPoint.X + (int)((i % 4 + 0.5) * SPImageGlobal.S2S_WIDTH + (i % 4) * SPImageGlobal.BB_WIDTH),
+                startPoint.Y + (int)((Math.Ceiling((i+1)/4d)+2.5)*SPImageGlobal.BB_HIGH)-SPImageGlobal.SMALL_BB_HIGH/2));
+                        racenum -= raceNO[i];
+                        break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data">20150831->1</param>
+        /// <returns></returns>
+        private String data2weekDayTranslation(String data)
+        {
+            //return DateUtil.data2weekDayTranslation(data);
+            return "7";
+        }
+    }
+}
